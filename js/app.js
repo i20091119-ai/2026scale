@@ -686,8 +686,8 @@
     renderTray(p);
     if (p.x) {
       messageEl.innerHTML = p.blanks.length > 1
-        ? '<b>x</b>의 값을 구해 보세요! 양쪽 <b>x</b> 칸에 <b>같은 무게추</b>가 함께 올라가요.'
-        : '<b>x</b>의 값을 구해서 무게추를 <b>x</b> 칸에 올려 보세요!';
+        ? '<b class="mx">x</b>의 값을 구해 보세요! 양쪽 <b class="mx">x</b> 칸에 <b>같은 무게추</b>가 함께 올라가요.'
+        : '<b class="mx">x</b>의 값을 구해서 무게추를 <b class="mx">x</b> 칸에 올려 보세요!';
     } else {
       messageEl.innerHTML = '무게추를 끌어서 반짝이는 <b>?</b> 칸에 올려 보세요! <span class="msg-hint">(무게 × 거리를 계산해요)</span>';
     }

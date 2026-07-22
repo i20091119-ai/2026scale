@@ -368,8 +368,13 @@ img { -webkit-user-drag: none; user-select: none; }
   text-align: center;
   color: #d99a12;
 }
-.blank-box.filled { color: #2c9c5c; font-style: normal; }
-.blank-box.x { font-style: italic; padding-right: .1em; }
+.blank-box.filled { color: #2c9c5c; font-style: normal; font-family: inherit; }
+/* 미지수 x는 수학 조판처럼 세리프 이탤릭으로 (알파벳 x와 구분) */
+.blank-box.x {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  padding-right: .12em;
+}
 .chip.blank.solved { animation: none; background: #e0f7e9; border-color: #59c88a; }
 
 /* ── 저울 ── */
@@ -483,7 +488,16 @@ img { -webkit-user-drag: none; user-select: none; }
 }
 .target-slot.done { display: none; }
 .target-q { font-size: 58px; font-weight: 900; color: #d9990a; }
-.target-q.x { font-style: italic; }
+.target-q.x {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+}
+/* 안내 문구 속 미지수 x */
+.mx {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 700;
+}
 .target-q.preview { color: #2c9c5c; font-style: normal; }
 
 /* ── 유아용 스캐폴딩 (1~2단계) ── */
