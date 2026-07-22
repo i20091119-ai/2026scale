@@ -821,7 +821,15 @@ body.skin-bg-result #screen-ranking {
   background: url('../assets/ui/bg-result.png') center / cover no-repeat;
 }
 #title-skin { display: none; }
-body.skin-title #title-skin { display: block; max-width: 820px; max-height: 175px; }
+body.skin-title #title-skin {
+  display: block;
+  max-width: 820px; max-height: 175px;
+  animation: title-float 3s ease-in-out infinite;
+}
+@keyframes title-float {
+  0%, 100% { transform: translateY(0) rotate(-0.6deg); }
+  50%      { transform: translateY(-12px) rotate(0.6deg); }
+}
 body.skin-title .game-title,
 body.skin-title .game-subtitle { display: none; }
 body.skin-beam .beam {
