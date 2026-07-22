@@ -12,6 +12,8 @@
   var MAX_ANGLE = 11;                                // 최대 기울기(도)
   var TOTAL_QUESTIONS = 10;
   var TIME_BASE = 100, TIME_STEP = 5;                // 1단계 100초, 단계마다 5초씩 감소
+  var BONUS_THRESHOLD = 1500;                        // 이 점수 이상으로 완주하면 보너스 도전권
+  var BONUS_COUNT = 2;                               // 보너스 문제 수 (11·12단계 취급)
   var IDLE_LIMIT_MS = 90000;                         // 방치 → 시작화면
   var SCAFFOLD_MAX_TIER = 4;                         // 이 단계까지 도움 표시 (무게×거리 익히기)
 
@@ -585,6 +587,14 @@
       if (i < state.results.length) html += state.results[i] ? '⭐' : '<span class="star-miss">☆</span>';
       else html += '<span class="star-todo">☆</span>';
     }
+    // 보너스 문제는 🔥로 표시
+    if (state.bonus) {
+      for (var b = 0; b < BONUS_COUNT; b++) {
+        var idx = TOTAL_QUESTIONS + b;
+        if (idx < state.results.length) html += state.results[idx] ? '🔥' : '<span class="star-miss">☆</span>';
+        else html += '<span class="star-todo">🔥</span>';
+      }
+    }
     starRowEl.innerHTML = html;
   }
 
@@ -643,6 +653,7 @@
     state.score = 0;
     state.correctCount = 0;
     state.results = [];
+    state.bonus = false;
     state.locked = true;
     state.solved = false;
     scoreEl.textContent = '0';
@@ -669,8 +680,13 @@
     state.locked = false;
     state.wrongAttempts = 0;
 
-    qProgressEl.textContent = '문제 ' + (state.qIndex + 1) + ' / ' + TOTAL_QUESTIONS;
-    $('q-grade').textContent = ProblemPool.TIER_INFO[p.tier - 1].grade + ' 수준';
+    if (state.qIndex >= TOTAL_QUESTIONS) {
+      qProgressEl.textContent = '🔥 보너스 ' + (state.qIndex - TOTAL_QUESTIONS + 1) + ' / ' + BONUS_COUNT;
+      $('q-grade').textContent = '최고 난도';
+    } else {
+      qProgressEl.textContent = '문제 ' + (state.qIndex + 1) + ' / ' + TOTAL_QUESTIONS;
+      $('q-grade').textContent = ProblemPool.TIER_INFO[p.tier - 1].grade + ' 수준';
+    }
     renderStars();
 
     // 수식 카드를 저울과 부딪히지 않는 모서리에 배치:
@@ -699,15 +715,37 @@
 
   function nextQuestion() {
     state.qIndex++;
-    if (state.qIndex >= TOTAL_QUESTIONS) endGame();
+    // 기본 10문제를 높은 점수로 완주하면 보너스 도전 제안
+    if (state.qIndex === TOTAL_QUESTIONS && !state.bonus) {
+      if (state.score >= BONUS_THRESHOLD) { offerBonus(); return; }
+      endGame(); return;
+    }
+    if (state.qIndex >= state.problems.length) endGame();
     else loadQuestion();
+  }
+
+  function offerBonus() {
+    stopTimer();
+    SFX.fanfare();
+    $('bonus-overlay').classList.remove('hidden');
+  }
+
+  function startBonus() {
+    SFX.click();
+    $('bonus-overlay').classList.add('hidden');
+    state.bonus = true;
+    state.problems = state.problems.concat(ProblemPool.drawBonus(BONUS_COUNT));
+    loadQuestion();
   }
 
   function endGame() {
     showScreen('result');
     $('result-score').textContent = state.score;
+    var baseCorrect = Math.min(state.correctCount, TOTAL_QUESTIONS);
+    var bonusCorrect = Math.max(0, state.correctCount - TOTAL_QUESTIONS);
     $('result-detail').textContent =
-      TOTAL_QUESTIONS + '문제 중 ' + state.correctCount + '문제 정답';
+      TOTAL_QUESTIONS + '문제 중 ' + baseCorrect + '문제 정답' +
+      (bonusCorrect > 0 ? ' · 🔥 보너스 ' + bonusCorrect + '문제 성공!' : '');
 
     // 최대 점수 = Σ 단계×제한시간 = 3850점
     var rank;
@@ -743,6 +781,7 @@
     stopTimer();
     $('howto-modal').classList.add('hidden');
     $('ready-overlay').classList.add('hidden');
+    $('bonus-overlay').classList.add('hidden');
     Confetti.stop();
     var video = $('celebration-video');
     video.pause();
@@ -905,6 +944,12 @@
     SFX.click();
     $('ready-overlay').classList.add('hidden');
     loadQuestion();
+  });
+  $('btn-bonus-go').addEventListener('click', startBonus);
+  $('btn-bonus-skip').addEventListener('click', function () {
+    SFX.click();
+    $('bonus-overlay').classList.add('hidden');
+    endGame();
   });
   $('btn-restart').addEventListener('click', function () { SFX.click(); Confetti.stop(); startGame(); });
   $('btn-quit').addEventListener('click', function () { SFX.click(); goHome(); });

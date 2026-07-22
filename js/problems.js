@@ -176,6 +176,57 @@
     }
   ];
 
+  /* ── 보너스(최고 난도) 출제 규칙 ─────────────────────────────
+   * 기본 10문제를 높은 점수로 완주한 도전자에게 주는 엑스트라 문제.
+   * 미지수가 양쪽에 있으면서 곱셈 항이 섞이거나, 먼 거리(4칸)
+   * 미지수 + 여러 항 조합. 보너스 1·2번은 11·12단계로 취급된다. */
+  var bonusBuilders = [
+    // d1x + a×d2 = d3x + b×d4 + c  (양쪽 미지수 + 곱셈 항)
+    function () {
+      var d1 = ri(3, 4), d3 = ri(1, d1 - 1);
+      var a = ri(2, 9), d2 = ri(2, 4), b = ri(2, 9), d4 = ri(2, 4), c = ri(1, 12);
+      return maybeMirror(
+        finish(11, [{ w: a, d: d2 }], [{ w: b, d: d4 }, { w: c, d: 1 }],
+               [{ side: 'left', d: d1 }, { side: 'right', d: d3 }], true),
+        0.5);
+    },
+    // 4x + a×d1 + b = c×d3 + e×d4  (거리 4칸 미지수 + 항 4개)
+    function () {
+      var a = ri(2, 9), b = ri(1, 9), c = ri(3, 9), e = ri(2, 9);
+      return maybeMirror(
+        finish(11, [{ w: a, d: ri(1, 3) }, { w: b, d: 1 }],
+               [{ w: c, d: ri(3, 4) }, { w: e, d: ri(2, 3) }],
+               [{ side: 'left', d: 4 }], true),
+        0.4);
+    }
+  ];
+
+  var bonusPool = [];
+
+  function generateBonusPool() {
+    var list = [], seen = {}, guard = 0;
+    while (list.length < PER_TIER && guard++ < 8000) {
+      var p = bonusBuilders[list.length % bonusBuilders.length]();
+      if (!p) continue;
+      var sig = signature(p);
+      if (seen[sig]) continue;
+      seen[sig] = true;
+      list.push(p);
+    }
+    return list;
+  }
+
+  /* 보너스 문제 뽑기 — n개를 서로 다르게 뽑고 11, 12, … 단계를 부여 */
+  function drawBonus(n) {
+    var rest = bonusPool.slice(), out = [];
+    for (var i = 0; i < n && rest.length; i++) {
+      var p = rest.splice(Math.floor(Math.random() * rest.length), 1)[0];
+      out.push({ tier: 11 + i, left: p.left, right: p.right,
+                 blanks: p.blanks, answer: p.answer, x: p.x });
+    }
+    return out;
+  }
+
   function signature(p) {
     function key(terms) {
       return terms.map(function (t) { return t.w + 'x' + t.d; }).sort().join(',');
@@ -198,6 +249,7 @@
       }
       pool.push(list);
     }
+    bonusPool = generateBonusPool();   // 같은 시드 흐름으로 보너스 풀도 재현 가능
     return pool;
   }
 
@@ -249,6 +301,8 @@
     TIER_INFO: TIER_INFO,
     generate: generatePool,
     drawGame: drawGame,
+    drawBonus: drawBonus,
+    getBonusPool: function () { return bonusPool; },
     trayNumbers: trayNumbers,
     torque: torque,
     equationText: equationText

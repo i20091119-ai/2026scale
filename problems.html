@@ -65,8 +65,7 @@
     return '왼팔: ' + side('left') + '  |  오른팔: ' + side('right');
   }
 
-  pool.forEach(function (list, ti) {
-    var info = ProblemPool.TIER_INFO[ti];
+  function section(title, desc, list) {
     var div = document.createElement('div');
     div.className = 'tier';
     var rows = list.map(function (p, i) {
@@ -75,12 +74,21 @@
         '<td class="ans">' + (p.x ? 'x = ' : '□ = ') + p.answer + '</td>' +
         '<td class="beam">' + beamText(p) + '</td></tr>';
     }).join('');
-    div.innerHTML =
-      '<h2><span class="grade">' + info.grade + '</span>' + (ti + 1) + '단계 — ' + info.label + '</h2>' +
-      '<p class="desc">문제를 바꾸고 싶으면 js/problems.js 의 ' + (ti + 1) + '단계 출제 규칙을 수정하세요.</p>' +
+    div.innerHTML = '<h2>' + title + '</h2>' +
+      '<p class="desc">' + desc + '</p>' +
       '<table><tr><th>#</th><th>등식</th><th>정답</th><th>저울 배치</th></tr>' + rows + '</table>';
     host.appendChild(div);
+  }
+
+  pool.forEach(function (list, ti) {
+    var info = ProblemPool.TIER_INFO[ti];
+    section('<span class="grade">' + info.grade + '</span>' + (ti + 1) + '단계 — ' + info.label,
+      '문제를 바꾸고 싶으면 js/problems.js 의 ' + (ti + 1) + '단계 출제 규칙을 수정하세요.', list);
   });
+
+  section('<span class="grade">🔥 보너스</span>최고 난도 (1,500점 이상 완주 시 2문제 도전)',
+    '보너스 1·2번은 11·12단계로 취급되어 제한시간 50초·45초, 점수 배율 11×·12×가 적용됩니다.',
+    ProblemPool.getBonusPool());
 })();
 </script>
 </body>
