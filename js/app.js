@@ -7,12 +7,13 @@
 
   /* ── 상수 ─────────────────────────────────────────────────── */
   var STAGE_W = 1920, STAGE_H = 1080;
-  var BEAM_W = 1100, BEAM_H = 26, SLOT_GAP = 125;   // 거리 1칸 = 125px
-  var WEIGHT_ON_BEAM = 104;                          // 저울 위 추 크기(px)
+  var BEAM_W = 1300, BEAM_H = 30, SLOT_GAP = 145;   // 거리 1칸 = 145px
+  var WEIGHT_ON_BEAM = 116;                          // 저울 위 추 크기(px)
   var MAX_ANGLE = 11;                                // 최대 기울기(도)
   var TOTAL_QUESTIONS = 10;
   var TIME_LIMIT = 30;                               // 문제당 초
   var IDLE_LIMIT_MS = 90000;                         // 방치 → 시작화면
+  var SCAFFOLD_MAX_TIER = 2;                         // 이 단계까지 유아용 도움 표시
 
   /* ── DOM ──────────────────────────────────────────────────── */
   var $ = function (id) { return document.getElementById(id); };
@@ -51,6 +52,7 @@
     solved: false,
     timerEnd: 0,
     timerRaf: 0,
+    pausedRemaining: null,
     lastTickSec: -1,
     blankChips: [],    // 등식의 빈칸 칩 [{el, d}]
     targets: []        // 저울의 목표 칸 [{el, d, side, stack}] (중3 단계는 2개)
@@ -111,7 +113,7 @@
     return BEAM_W / 2 + sign * d * SLOT_GAP;
   }
 
-  var STACK_STEP = 114;   // 같은 칸에 추를 쌓을 때의 세로 간격(px)
+  var STACK_STEP = 128;   // 같은 칸에 추를 쌓을 때의 세로 간격(px)
 
   function renderScale(p) {
     beamEl.innerHTML = '';
@@ -136,14 +138,33 @@
     });
 
     // 이미 올라가 있는 추
+    var scaffold = isScaffold();
+    var slotBadges = {};   // 스캐폴딩: 칸마다 풍선 하나 (쌓인 추는 "2+3"처럼 합쳐 표시)
     ['left', 'right'].forEach(function (side) {
       p[side].forEach(function (t) {
         var w = makeWeight(t.w, 'on-beam');
         w.style.left = (slotX(side, t.d) - WEIGHT_ON_BEAM / 2) + 'px';
         w.style.bottom = 'calc(100% + ' + (stackLevel(side, t.d) * STACK_STEP) + 'px)';
         beamEl.appendChild(w);
+        if (scaffold) {
+          var key = side + ':' + t.d;
+          if (!slotBadges[key]) slotBadges[key] = { el: w, values: [] };
+          slotBadges[key].el = w;              // 맨 위 추가 풍선을 단다
+          slotBadges[key].values.push(t.w);
+        }
       });
     });
+    Object.keys(slotBadges).forEach(function (key) {
+      var info = slotBadges[key];
+      var d = +key.split(':')[1];
+      var expr = info.values.join('+');
+      var total = info.values.reduce(function (a, b) { return a + b; }, 0);
+      var text = d > 1 ? expr + '×' + d + '=' + total * d
+        : (info.values.length > 1 ? expr : expr);
+      addBadgeText(info.el, text);
+    });
+
+    renderSideSums(p);
 
     // 목표 칸(? 또는 x) — 그 칸에 이미 추가 있으면 그 위에 표시.
     // 미지수가 양쪽에 있는 방정식(중3)은 목표 칸이 양팔에 하나씩 생긴다.
@@ -159,6 +180,39 @@
     });
 
     setTilt(computeTilt(null), false);
+  }
+
+  /* ══════════ 유아용 스캐폴딩 (1~2단계) ══════════
+   * 추마다 "이 칸에서는 이 값" 풍선을 달고, 양팔 아래에 합계를 보여준다. */
+  function isScaffold() {
+    return state.problem && state.problem.tier <= SCAFFOLD_MAX_TIER;
+  }
+
+  function addBadgeText(weightEl, text) {
+    var b = document.createElement('div');
+    b.className = 'w-badge';
+    b.textContent = text;
+    weightEl.appendChild(b);
+  }
+
+  function addValueBadge(weightEl, w, d) {
+    addBadgeText(weightEl, d > 1 ? (w + '×' + d + '=' + w * d) : String(w));
+  }
+
+  function renderSideSums(p) {
+    var scaffold = isScaffold();
+    ['left', 'right'].forEach(function (side) {
+      var el = $(side === 'left' ? 'sum-left' : 'sum-right');
+      el.classList.toggle('hidden', !scaffold);
+      if (!scaffold) return;
+      var parts = p[side].map(function (t) { return t.d > 1 ? t.w + '×' + t.d : String(t.w); });
+      var hasBlank = p.blanks.some(function (b) { return b.side === side; });
+      if (hasBlank) parts.push(p.x ? 'x' : '?');
+      var text = parts.join(' + ') || '0';
+      // 빈칸이 없는 팔은 합계까지 보여줘 목표 값을 알 수 있게 한다
+      if (!hasBlank && parts.length > 1) text += ' = ' + ProblemPool.torque(p[side]);
+      el.innerHTML = (side === 'left' ? '👈 왼쪽 ' : '👉 오른쪽 ') + '<b>' + text + '</b>';
+    });
   }
 
   /* placedW: 목표 칸(들)에 임시/정답으로 올린 무게 (없으면 null) */
@@ -300,9 +354,25 @@
     var p = clientToStage(cx, cy);
     drag.ghost.style.left = (p.x - 65) + 'px';
     drag.ghost.style.top = (p.y - 80) + 'px';
-    // 목표 칸 위에 있으면 하이라이트 (양쪽 미지수면 두 칸 모두)
+    // 목표 칸 위에 있으면 하이라이트 (양쪽 미지수면 두 칸 모두).
+    // 유아용 단계에서는 "이 칸에 놓으면 이 값이 돼요"를 미리 보여준다.
     var over = isOverTarget(cx, cy);
-    state.targets.forEach(function (t) { t.el.classList.toggle('hover', over); });
+    state.targets.forEach(function (t) {
+      t.el.classList.toggle('hover', over);
+      if (isScaffold() && drag) setTargetPreview(t, over ? drag.n : null);
+    });
+  }
+
+  function setTargetPreview(t, n) {
+    var q = t.el.querySelector('.target-q');
+    if (!q) return;
+    if (n != null) {
+      q.textContent = String(n * t.d);
+      q.classList.add('preview');
+    } else {
+      q.textContent = state.problem.x ? 'x' : '?';
+      q.classList.remove('preview');
+    }
   }
 
   function isOverTarget(cx, cy) {
@@ -326,7 +396,10 @@
     d.src.removeEventListener('pointermove', onWeightPointerMove);
     d.src.removeEventListener('pointerup', onWeightPointerUp);
     d.src.removeEventListener('pointercancel', onWeightPointerUp);
-    state.targets.forEach(function (t) { t.el.classList.remove('hover'); });
+    state.targets.forEach(function (t) {
+      t.el.classList.remove('hover');
+      if (isScaffold()) setTargetPreview(t, null);
+    });
 
     if (!state.locked && !state.solved && isOverTarget(e.clientX, e.clientY)) {
       d.ghost.remove();
@@ -363,6 +436,7 @@
       var w = makeWeight(n, 'on-beam placed');
       w.style.left = (slotX(t.side, t.d) - WEIGHT_ON_BEAM / 2) + 'px';
       w.style.bottom = 'calc(100% + ' + (t.stack * STACK_STEP) + 'px)';
+      if (isScaffold()) addValueBadge(w, n, t.d);
       beamEl.appendChild(w);
       return w;
     });
@@ -469,7 +543,12 @@
   function startTimer() {
     state.timerEnd = performance.now() + TIME_LIMIT * 1000;
     state.lastTickSec = -1;
+    state.pausedRemaining = null;
     timerBar.classList.remove('warn', 'danger');
+    runTimerLoop();
+  }
+
+  function runTimerLoop() {
     cancelAnimationFrame(state.timerRaf);
     (function tick(now) {
       if (state.screen !== 'game' || state.solved) return;
@@ -486,6 +565,22 @@
   }
 
   function stopTimer() { cancelAnimationFrame(state.timerRaf); }
+
+  /* 게임 방법 팝업이 열려 있는 동안 남은 시간을 보존한다 */
+  function pauseTimer() {
+    if (state.screen === 'game' && !state.solved && state.pausedRemaining == null) {
+      state.pausedRemaining = Math.max(0, state.timerEnd - performance.now());
+      stopTimer();
+    }
+  }
+
+  function resumeTimer() {
+    if (state.pausedRemaining != null) {
+      state.timerEnd = performance.now() + state.pausedRemaining;
+      state.pausedRemaining = null;
+      runTimerLoop();
+    }
+  }
 
   /* ══════════ 게임 진행 ══════════ */
   function startGame() {
@@ -530,6 +625,8 @@
     }
     timerBar.style.width = '100%';
     startTimer();
+    // 문제 전환 중에 게임 방법 팝업을 열어 둔 경우: 새 문제도 멈춘 채 시작
+    if (!$('howto-modal').classList.contains('hidden')) pauseTimer();
   }
 
   function nextQuestion() {
@@ -576,6 +673,7 @@
 
   function goHome() {
     stopTimer();
+    $('howto-modal').classList.add('hidden');
     Confetti.stop();
     var video = $('celebration-video');
     video.pause();
@@ -722,6 +820,29 @@
     });
   })();
 
+  /* ══════════ 게임 방법 팝업 ══════════ */
+  var howtoModal = $('howto-modal');
+
+  function openHowto() {
+    SFX.unlock();
+    SFX.click();
+    pauseTimer();
+    howtoModal.classList.remove('hidden');
+  }
+
+  function closeHowto() {
+    SFX.click();
+    howtoModal.classList.add('hidden');
+    resumeTimer();
+  }
+
+  $('btn-howto-start').addEventListener('click', openHowto);
+  $('btn-howto-game').addEventListener('click', openHowto);
+  $('btn-howto-close').addEventListener('click', closeHowto);
+  howtoModal.addEventListener('click', function (e) {
+    if (e.target === howtoModal) closeHowto();   // 바깥(배경) 터치로도 닫기
+  });
+
   /* ══════════ 버튼 ══════════ */
   $('btn-start').addEventListener('click', function () { SFX.unlock(); SFX.click(); startGame(); });
   $('btn-restart').addEventListener('click', function () { SFX.click(); Confetti.stop(); startGame(); });
@@ -744,6 +865,7 @@
     ['assets/ui/beam.png', 'skin-beam'],
     ['assets/ui/stand.png', 'skin-stand'],
     ['assets/ui/tray.png', 'skin-tray']
+    // 시작 화면 안내 카드(howto-1~3.png)는 카드의 img onload 로 개별 적용된다
   ].forEach(function (pair) {
     var im = new Image();
     im.onload = function () { document.body.classList.add(pair[1]); };

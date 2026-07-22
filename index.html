@@ -27,16 +27,19 @@
 
       <div class="howto">
         <div class="howto-card">
+          <img class="howto-skin" src="assets/ui/howto-1.png" alt="" onload="this.parentElement.classList.add('skinned')">
           <div class="howto-icon">🧐</div>
           <div class="howto-step">1단계</div>
           <p>위쪽 수식의 <b>□</b>에<br>들어갈 수를 생각해요</p>
         </div>
         <div class="howto-card">
+          <img class="howto-skin" src="assets/ui/howto-2.png" alt="" onload="this.parentElement.classList.add('skinned')">
           <div class="howto-icon">👆</div>
           <div class="howto-step">2단계</div>
           <p>무게추를 <b>드래그</b>해서<br><b>?</b> 칸에 올려요</p>
         </div>
         <div class="howto-card">
+          <img class="howto-skin" src="assets/ui/howto-3.png" alt="" onload="this.parentElement.classList.add('skinned')">
           <div class="howto-icon">🎉</div>
           <div class="howto-step">3단계</div>
           <p>저울이 <b>수평</b>이 되면<br>점수를 얻어요!</p>
@@ -46,7 +49,10 @@
       <div class="howto-tip">💡 무게추가 <b>가운데에서 멀수록</b> 더 무겁게 작용해요! (무게 × 거리)</div>
 
       <button id="btn-start" class="big-btn">게임 시작 ▶</button>
-      <button id="btn-hall" class="ghost-btn">🏆 명예의 전당</button>
+      <div class="start-sub-btns">
+        <button id="btn-howto-start" class="ghost-btn">❓ 게임 방법</button>
+        <button id="btn-hall" class="ghost-btn">🏆 명예의 전당</button>
+      </div>
       <p class="start-meta">총 10문제 · 문제당 30초 · 점수 = 문제 단계 × 남은 시간</p>
     </div>
   </section>
@@ -55,8 +61,7 @@
   <section id="screen-game" class="screen">
     <header class="game-header">
       <div class="header-left">
-        <img id="logo-img-game" class="logo-img small" src="assets/logo.png" alt="" onerror="this.classList.add('missing')" onload="this.parentElement.classList.add('has-logo')">
-        <span class="header-logo-text">경남수학문화관</span>
+        <img id="logo-img-game" class="logo-img small" src="assets/logo.png" alt="" onerror="this.classList.add('missing')">
       </div>
       <div class="header-center">
         <div class="q-line">
@@ -67,6 +72,7 @@
       </div>
       <div class="header-right">
         <div class="score-box">⭐ <span id="score">0</span>점</div>
+        <button id="btn-howto-game" class="icon-btn" aria-label="게임 방법">❓</button>
         <button id="btn-mute" class="icon-btn" aria-label="소리 켜기/끄기">🔊</button>
         <button id="btn-quit" class="icon-btn" aria-label="처음으로">🏠</button>
       </div>
@@ -86,6 +92,8 @@
       <div class="pillar"></div>
       <div class="pedestal"></div>
       <img class="stand-skin" src="assets/ui/stand.png" alt="">
+      <div id="sum-left" class="side-sum hidden"></div>
+      <div id="sum-right" class="side-sum hidden"></div>
     </div>
 
     <div id="message" class="message">무게추를 끌어서 반짝이는 <b>?</b> 칸에 올려 보세요!</div>
@@ -99,6 +107,37 @@
       <div id="feedback-card" class="feedback-card"></div>
     </div>
   </section>
+
+  <!-- ══════════ 게임 방법 팝업 ══════════ -->
+  <div id="howto-modal" class="modal hidden">
+    <div class="modal-card">
+      <h2 class="modal-title">❓ 게임 방법</h2>
+      <div class="modal-steps">
+        <div class="modal-step">
+          <div class="ms-icon">🧐</div>
+          <div class="ms-no">1</div>
+          <p>위쪽 수식의 빈칸(<b>□</b> 또는 <b>x</b>)에<br>들어갈 수를 생각해요</p>
+        </div>
+        <div class="modal-step">
+          <div class="ms-icon">👆</div>
+          <div class="ms-no">2</div>
+          <p>보관함의 무게추를 <b>손가락으로 끌어서</b><br>반짝이는 칸에 올려요</p>
+        </div>
+        <div class="modal-step">
+          <div class="ms-icon">⚖️</div>
+          <div class="ms-no">3</div>
+          <p><b>무게 × 거리</b>가 양쪽에서 같으면<br>저울이 수평! 정답이에요</p>
+        </div>
+        <div class="modal-step">
+          <div class="ms-icon">⏱️</div>
+          <div class="ms-no">4</div>
+          <p>한 문제당 <b>30초</b>! 빨리 풀수록 점수 UP<br>(점수 = 단계 × 남은 시간)</p>
+        </div>
+      </div>
+      <div class="modal-tip">💡 무게추가 가운데에서 <b>멀수록 더 무겁게</b> 작용해요! 같은 추라도 2칸에 놓으면 <b>2배</b>!</div>
+      <button id="btn-howto-close" class="big-btn">알겠어요!</button>
+    </div>
+  </div>
 
   <!-- ══════════ 결과 화면 ══════════ -->
   <section id="screen-result" class="screen">
