@@ -512,10 +512,14 @@ img { -webkit-user-drag: none; user-select: none; }
 
 /* ── 안내 메시지 ── */
 .message {
-  height: 52px;
+  min-height: 52px;
+  align-self: center;
   text-align: center;
   font-size: 32px; font-weight: 700;
   color: #44506a;
+  background: rgba(255, 255, 255, .78);
+  border-radius: 999px;
+  padding: 5px 40px;
 }
 .message b { color: #e08600; }
 .msg-hint { font-size: 24px; color: #8a97ad; }
@@ -820,6 +824,10 @@ body.skin-bg-start #screen-start,
 body.skin-bg-start #screen-name {
   background: url('../assets/ui/bg-start.png') center / cover no-repeat;
 }
+body.skin-bg-start .start-meta {
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, .45);
+}
 body.skin-bg-game #screen-game {
   background: url('../assets/ui/bg-game.png') center / cover no-repeat;
 }
@@ -828,10 +836,12 @@ body.skin-bg-result #screen-ranking {
   background: url('../assets/ui/bg-result.png') center / cover no-repeat;
 }
 #title-skin { display: none; }
-body.skin-title #title-skin { display: block; max-width: 1150px; max-height: 300px; }
+body.skin-title #title-skin { display: block; max-width: 1150px; max-height: 260px; }
 body.skin-title .game-title,
 body.skin-title .game-subtitle { display: none; }
 body.skin-beam .beam {
+  /* 업로드된 저울대 그림 비율(1004×53)에 맞춰 두께를 키움 */
+  height: 68px; top: -34px;
   background: url('../assets/ui/beam.png') center / 100% 100% no-repeat;
   box-shadow: none;
 }
@@ -839,9 +849,10 @@ body.skin-beam .beam {
 body.skin-stand .stand-skin {
   display: block;
   position: absolute;
-  left: 50%; top: 448px;
+  /* 그림 속 금색 공(회전축, 높이의 16.5% 지점)이 축 y=470에 오도록 배치 */
+  left: 50%; top: 439px;
   transform: translateX(-50%);
-  height: 182px; width: auto;
+  height: 190px; width: auto;
 }
 body.skin-stand .pillar,
 body.skin-stand .pedestal,
