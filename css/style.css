@@ -770,6 +770,15 @@ img { -webkit-user-drag: none; user-select: none; }
   align-items: center; justify-content: center;
   gap: 30px;
 }
+.ranking-logo {
+  height: 64px;
+  background: rgba(255, 255, 255, .95);
+  padding: 14px 34px;
+  border-radius: 999px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .25);
+  box-sizing: content-box;
+}
+.ranking-logo.missing { display: none; }
 .ranking-title {
   font-size: 72px; font-weight: 900; color: #ffe08a;
   text-shadow: 0 6px 18px rgba(0,0,0,.3);
