@@ -235,7 +235,6 @@ img { -webkit-user-drag: none; user-select: none; }
   padding: 8px 32px;
 }
 .start-sub-btns { display: flex; gap: 22px; }
-.start-meta { font-size: 22px; font-weight: 600; color: #7d8aa0; }
 
 /* ═══════════ 게임 화면 ═══════════ */
 #screen-game {
