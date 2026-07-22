@@ -858,7 +858,7 @@
     var hlDone = false;
     host.innerHTML = top.map(function (e, i) {
       var when = new Date(e.d);
-      var dateStr = (when.getMonth() + 1) + '.' + when.getDate();
+      var dateStr = when.getFullYear() + '.' + (when.getMonth() + 1) + '.' + when.getDate() + '.';
       var isMe = !hlDone && highlight && e.n === highlight.n && e.s === highlight.s;
       if (isMe) hlDone = true;
       return '<li class="rank-row' + (isMe ? ' me' : '') + '">' +
