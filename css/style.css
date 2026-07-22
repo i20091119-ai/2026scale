@@ -194,7 +194,7 @@ img { -webkit-user-drag: none; user-select: none; }
   position: absolute; inset: 0;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  gap: 34px;
+  gap: 26px;
   text-align: center;
 }
 .game-title {
@@ -209,9 +209,9 @@ img { -webkit-user-drag: none; user-select: none; }
 
 .game-subtitle { font-size: 42px; font-weight: 700; color: #5b7a99; }
 
-.howto { display: flex; gap: 34px; }
+.howto { display: flex; gap: 30px; }
 .howto-card {
-  width: 330px;
+  width: 300px;
   background: rgba(255,255,255,.9);
   border-radius: 34px;
   padding: 30px 24px;
@@ -239,12 +239,12 @@ img { -webkit-user-drag: none; user-select: none; }
 .howto-card.skinned .howto-skin { display: block; width: 100%; height: auto; }
 
 .howto-tip {
-  font-size: 30px; font-weight: 700;
+  font-size: 26px; font-weight: 700;
   color: #7a5b1e;
   background: #fff3c9;
   border: 3px dashed #f0b429;
   border-radius: 999px;
-  padding: 12px 42px;
+  padding: 10px 36px;
 }
 .start-sub-btns { display: flex; gap: 22px; }
 .start-meta { font-size: 26px; font-weight: 600; color: #7d8aa0; }
@@ -820,23 +820,21 @@ img { -webkit-user-drag: none; user-select: none; }
  * (파일이 없으면 기본 그래픽 사용 — 상세 규격은 docs/디자인_가이드.md)
  *   bg-start.png  bg-game.png  bg-result.png  title.png
  *   beam.png  stand.png  tray.png                         */
+/* 배경 그림의 반투명 부분 뒤에는 흰색을 깔아준다
+ * (그림의 가운데 띠가 투명으로 저장되어 있어도 의도대로 밝게 보이도록) */
 body.skin-bg-start #screen-start,
 body.skin-bg-start #screen-name {
-  background: url('../assets/ui/bg-start.png') center / cover no-repeat;
-}
-body.skin-bg-start .start-meta {
-  color: #fff;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, .45);
+  background: url('../assets/ui/bg-start.png') center / cover no-repeat #ffffff;
 }
 body.skin-bg-game #screen-game {
-  background: url('../assets/ui/bg-game.png') center / cover no-repeat;
+  background: url('../assets/ui/bg-game.png') center / cover no-repeat #ffffff;
 }
 body.skin-bg-result #screen-result,
 body.skin-bg-result #screen-ranking {
   background: url('../assets/ui/bg-result.png') center / cover no-repeat;
 }
 #title-skin { display: none; }
-body.skin-title #title-skin { display: block; max-width: 1150px; max-height: 260px; }
+body.skin-title #title-skin { display: block; max-width: 940px; max-height: 200px; }
 body.skin-title .game-title,
 body.skin-title .game-subtitle { display: none; }
 body.skin-beam .beam {
