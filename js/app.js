@@ -789,9 +789,14 @@
     showScreen('start');
   }
 
-  /* ══════════ 명예의 전당 (랭킹, localStorage 저장) ══════════ */
+  /* ══════════ 명예의 전당 ══════════
+   * 서버(구글 시트, config.js 설정 시)에 저장하고 모든 기기가 공유한다.
+   * 서버가 없거나 연결이 안 되면 이 기기(localStorage)에 저장하고,
+   * 연결이 돌아오면 밀린 기록(전송 대기열)을 자동으로 올린다. */
   var RANK_KEY = 'gnmc-scale-ranking';
+  var PENDING_KEY = 'gnmc-scale-pending';
   var NAME_MAX = 8;
+  var BANNED_WORDS = ['시발', '씨발', '병신', '새끼', '존나', '좆', '니미', 'fuck', 'shit', '섹스'];
   var composer = Hangul.create();
 
   function loadRanking() {
@@ -799,34 +804,91 @@
     catch (e) { return []; }
   }
 
+  function saveRanking(list) {
+    localStorage.setItem(RANK_KEY, JSON.stringify(list.slice(0, 50)));
+  }
+
   function addRanking(name, score) {
     var list = loadRanking();
-    var entry = { id: Date.now() + '-' + Math.floor(Math.random() * 1e6), n: name, s: score, d: Date.now() };
+    var entry = { n: name, s: score, d: Date.now() };
     list.push(entry);
     list.sort(function (a, b) { return b.s - a.s || a.d - b.d; });
-    localStorage.setItem(RANK_KEY, JSON.stringify(list.slice(0, 50)));
+    saveRanking(list);
     return entry;
   }
 
-  function showRankingScreen(highlightId) {
-    var list = loadRanking().slice(0, 10);
+  /* 전송 대기열: 서버 전송에 실패한 기록을 보관했다가 재시도 */
+  function loadPending() {
+    try { return JSON.parse(localStorage.getItem(PENDING_KEY)) || []; }
+    catch (e) { return []; }
+  }
+
+  function queuePending(entry) {
+    var pend = loadPending();
+    pend.push(entry);
+    localStorage.setItem(PENDING_KEY, JSON.stringify(pend.slice(-30)));
+  }
+
+  function flushPending() {
+    if (!RemoteRank.enabled) return Promise.resolve();
+    var pend = loadPending();
+    if (!pend.length) return Promise.resolve();
+    var remain = [];
+    var chain = Promise.resolve();
+    pend.forEach(function (en) {
+      chain = chain.then(function () {
+        return RemoteRank.submit(en.n, en.s).then(function (ok) {
+          if (!ok) remain.push(en);
+        });
+      });
+    });
+    return chain.then(function () {
+      localStorage.setItem(PENDING_KEY, JSON.stringify(remain));
+    });
+  }
+
+  function renderRankingRows(list, highlight) {
     var host = $('ranking-list');
-    if (!list.length) {
+    var top = list.slice(0, 10);
+    if (!top.length) {
       host.innerHTML = '<li class="rank-empty">아직 기록이 없어요. 첫 번째 주인공이 되어 보세요!</li>';
-    } else {
-      var medals = ['🥇', '🥈', '🥉'];
-      host.innerHTML = list.map(function (e, i) {
-        var when = new Date(e.d);
-        var dateStr = (when.getMonth() + 1) + '.' + when.getDate();
-        return '<li class="rank-row' + (e.id === highlightId ? ' me' : '') + '">' +
-          '<span class="rank-no">' + (medals[i] || (i + 1) + '위') + '</span>' +
-          '<span class="rank-name">' + escapeHTML(e.n) + '</span>' +
-          '<span class="rank-date">' + dateStr + '</span>' +
-          '<span class="rank-score">' + e.s + '점</span></li>';
-      }).join('');
+      return;
     }
+    var medals = ['🥇', '🥈', '🥉'];
+    var hlDone = false;
+    host.innerHTML = top.map(function (e, i) {
+      var when = new Date(e.d);
+      var dateStr = (when.getMonth() + 1) + '.' + when.getDate();
+      var isMe = !hlDone && highlight && e.n === highlight.n && e.s === highlight.s;
+      if (isMe) hlDone = true;
+      return '<li class="rank-row' + (isMe ? ' me' : '') + '">' +
+        '<span class="rank-no">' + (medals[i] || (i + 1) + '위') + '</span>' +
+        '<span class="rank-name">' + escapeHTML(e.n) + '</span>' +
+        '<span class="rank-date">' + dateStr + '</span>' +
+        '<span class="rank-score">' + e.s + '점</span></li>';
+    }).join('');
+  }
+
+  /* highlight: {n, s} — 방금 등록한 내 기록 강조 */
+  function showRankingScreen(highlight) {
     Confetti.stop();
     showScreen('ranking');
+    var statusEl = $('ranking-status');
+    renderRankingRows(loadRanking(), highlight);
+    if (!RemoteRank.enabled) { statusEl.textContent = ''; return; }
+    statusEl.textContent = '🌐 전체 랭킹을 불러오는 중…';
+    flushPending().then(function () {
+      return RemoteRank.fetchTop();
+    }).then(function (list) {
+      if (state.screen !== 'ranking') return;
+      if (list) {
+        saveRanking(list);   // 서버 목록을 이 기기에도 캐시 (오프라인 대비)
+        renderRankingRows(list, highlight);
+        statusEl.textContent = '🌐 전체 전시장 랭킹';
+      } else {
+        statusEl.textContent = '📴 서버 연결 안 됨 — 이 기기의 기록만 보여요';
+      }
+    });
   }
 
   function escapeHTML(s) {
@@ -885,23 +947,32 @@
     Confetti.stop();
     composer.reset();
     $('name-display').textContent = '';
+    $('name-warn').classList.add('hidden');
     $('name-score').textContent = state.score;
     renderOSK('한글');
     showScreen('name');
   }
 
+  function nameWarn(msg) {
+    $('name-warn').textContent = msg;
+    $('name-warn').classList.remove('hidden');
+    $('name-display').parentElement.classList.remove('need');
+    void $('name-display').parentElement.offsetWidth;   // 애니메이션 재시작
+    $('name-display').parentElement.classList.add('need');
+    SFX.wrong();
+  }
+
   function submitName() {
     var name = composer.text().trim();
-    if (!name) {
-      $('name-display').parentElement.classList.remove('need');
-      void $('name-display').parentElement.offsetWidth;   // 애니메이션 재시작
-      $('name-display').parentElement.classList.add('need');
-      SFX.wrong();
-      return;
-    }
+    if (!name) { nameWarn('이름을 입력해 주세요!'); return; }
+    var lower = name.toLowerCase();
+    var banned = BANNED_WORDS.some(function (w) { return lower.indexOf(w) >= 0; });
+    if (banned) { nameWarn('그 이름은 사용할 수 없어요. 다른 이름을 골라 주세요!'); return; }
     SFX.correct();
     var entry = addRanking(name, state.score);
-    showRankingScreen(entry.id);
+    // 서버 사용 시: 전송 대기열에 넣으면 랭킹 화면 진입 시 flushPending이 올린다
+    if (RemoteRank.enabled) queuePending({ n: entry.n, s: entry.s, d: entry.d });
+    showRankingScreen({ n: entry.n, s: entry.s });
   }
 
   document.querySelectorAll('.osk-tab').forEach(function (t) {

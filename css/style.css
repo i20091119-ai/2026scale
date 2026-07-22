@@ -745,6 +745,13 @@ img { -webkit-user-drag: none; user-select: none; }
   margin-left: 6px;
   animation: blink 1s steps(2) infinite;
 }
+.name-warn {
+  font-size: 26px; font-weight: 700;
+  color: #d94f6e;
+  min-height: 32px;
+}
+.name-warn.hidden { visibility: hidden; }
+
 .osk-tabs { display: flex; gap: 14px; }
 .osk-tab {
   font-family: inherit;
@@ -796,6 +803,11 @@ img { -webkit-user-drag: none; user-select: none; }
 .ranking-title {
   font-size: 72px; font-weight: 900; color: #ffe08a;
   text-shadow: 0 6px 18px rgba(0,0,0,.3);
+}
+.ranking-status {
+  font-size: 24px; font-weight: 700;
+  color: rgba(255,255,255,.85);
+  min-height: 30px;
 }
 .ranking-list {
   list-style: none;

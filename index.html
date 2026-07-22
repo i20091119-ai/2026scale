@@ -188,6 +188,7 @@
       <div class="name-display-wrap">
         <div id="name-display" class="name-display"></div><span class="name-cursor"></span>
       </div>
+      <p id="name-warn" class="name-warn hidden"></p>
       <div class="osk-tabs">
         <button class="osk-tab active" data-page="한글">한글</button>
         <button class="osk-tab" data-page="ABC">ABC</button>
@@ -206,6 +207,7 @@
     <div class="ranking-center">
       <img class="ranking-logo" src="assets/logo.png" alt="" onerror="this.classList.add('missing')">
       <h2 class="ranking-title">🏆 명예의 전당 TOP 10</h2>
+      <p id="ranking-status" class="ranking-status"></p>
       <ol id="ranking-list" class="ranking-list"></ol>
       <div class="name-btns">
         <button id="btn-rank-restart" class="big-btn">다시 도전하기 🔄</button>
@@ -216,6 +218,8 @@
 
 </div>
 
+<script src="js/config.js"></script>
+<script src="js/remote-rank.js"></script>
 <script src="js/problems.js"></script>
 <script src="js/hangul.js"></script>
 <script src="js/audio.js"></script>
