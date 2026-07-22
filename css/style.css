@@ -87,15 +87,19 @@ img { -webkit-user-drag: none; user-select: none; }
   width: 130px; height: 152px;
   flex: 0 0 auto;
 }
-/* 무게추 일러스트는 3840×2160(가로형, 투명 배경)이라
- * 세로를 기준으로 맞추고 가운데의 추 그림 부분만 보이게 한다.
+/* 무게추 일러스트는 3840×2160(가로형, 투명 배경)이고, 실제 그림은
+ * 가운데(가로 1381~2459, 세로 213~1947px)에 있다. 그림 부분이 박스를
+ * 세로로 꽉 채우고 바닥이 저울대에 닿도록 확대·이동한다.
+ * (height 124.6% = 2160/1734, bottom -12.3% = 아래 여백 213px 보정)
  * 좌우 여백은 투명이라 이웃과 겹쳐도 문제없다. */
 .w-img {
-  position: absolute; top: 0; left: 50%;
+  position: absolute; left: 50%; bottom: -12.3%;
   transform: translateX(-50%);
-  height: 100%; width: auto;
+  height: 124.6%; width: auto;
   max-width: none;
   display: none;
+  /* 투명 여백이 이웃 추를 덮어 터치를 가로채지 않도록 */
+  pointer-events: none;
 }
 .weight.has-img .w-img { display: block; }
 .weight.has-img .w-fallback { display: none; }
