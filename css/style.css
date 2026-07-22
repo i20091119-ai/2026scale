@@ -3,6 +3,14 @@
  * 전자칠판(터치) 전시용: 선택·확대·스크롤 차단, 큰 터치 타깃
  * ═══════════════════════════════════════════════════════════════ */
 
+/* 썬플라워 B (Sunflower Bold, SIL OFL 라이선스) — 오프라인 내장 */
+@font-face {
+  font-family: 'Sunflower';
+  src: url('../assets/fonts/Sunflower-Bold.ttf') format('truetype');
+  font-weight: 300 900;
+  font-display: swap;
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body {
@@ -13,7 +21,7 @@ html, body {
   -webkit-user-select: none; user-select: none;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
-  font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', sans-serif;
+  font-family: 'Sunflower', 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', sans-serif;
   color: #3d3428;
 }
 
@@ -246,7 +254,15 @@ img { -webkit-user-drag: none; user-select: none; }
 .header-left { display: flex; align-items: center; gap: 16px; }
 .header-logo-text { font-size: 26px; font-weight: 800; color: #4a5568; }
 .header-center { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.q-line { display: flex; align-items: center; gap: 16px; }
 .q-progress { font-size: 34px; font-weight: 900; color: #2d4a66; }
+.q-grade {
+  font-size: 22px; font-weight: 800; color: #35577a;
+  background: #e6f0fa;
+  border: 2px solid #a9c6e0;
+  border-radius: 999px;
+  padding: 3px 18px;
+}
 .star-row { font-size: 24px; letter-spacing: 3px; }
 .star-miss, .star-todo { opacity: .8; }
 .star-todo { opacity: .35; }
@@ -329,7 +345,8 @@ img { -webkit-user-drag: none; user-select: none; }
   text-align: center;
   color: #d99a12;
 }
-.blank-box.filled { color: #2c9c5c; }
+.blank-box.filled { color: #2c9c5c; font-style: normal; }
+.blank-box.x { font-style: italic; padding-right: .1em; }
 .chip.blank.solved { animation: none; background: #e0f7e9; border-color: #59c88a; }
 
 /* ── 저울 ── */
@@ -443,6 +460,7 @@ img { -webkit-user-drag: none; user-select: none; }
 }
 .target-slot.done { display: none; }
 .target-q { font-size: 58px; font-weight: 900; color: #d9990a; }
+.target-q.x { font-style: italic; }
 
 /* ── 안내 메시지 ── */
 .message {
@@ -686,4 +704,44 @@ img { -webkit-user-drag: none; user-select: none; }
   font-size: 34px; font-weight: 700;
   color: rgba(255,255,255,.9);
   padding: 40px 0;
+}
+
+/* ═══════════ 디자인 교체 슬롯 ═══════════
+ * assets/ui/ 폴더에 아래 이름의 이미지를 올리면 자동으로 적용된다.
+ * (파일이 없으면 기본 그래픽 사용 — 상세 규격은 docs/디자인_가이드.md)
+ *   bg-start.png  bg-game.png  bg-result.png  title.png
+ *   beam.png  stand.png  tray.png                         */
+body.skin-bg-start #screen-start,
+body.skin-bg-start #screen-name {
+  background: url('../assets/ui/bg-start.png') center / cover no-repeat;
+}
+body.skin-bg-game #screen-game {
+  background: url('../assets/ui/bg-game.png') center / cover no-repeat;
+}
+body.skin-bg-result #screen-result,
+body.skin-bg-result #screen-ranking {
+  background: url('../assets/ui/bg-result.png') center / cover no-repeat;
+}
+#title-skin { display: none; }
+body.skin-title #title-skin { display: block; max-width: 1150px; max-height: 300px; }
+body.skin-title .game-title,
+body.skin-title .game-subtitle { display: none; }
+body.skin-beam .beam {
+  background: url('../assets/ui/beam.png') center / 100% 100% no-repeat;
+  box-shadow: none;
+}
+.stand-skin { display: none; }
+body.skin-stand .stand-skin {
+  display: block;
+  position: absolute;
+  left: 50%; top: 408px;
+  transform: translateX(-50%);
+  height: 182px; width: auto;
+}
+body.skin-stand .pillar,
+body.skin-stand .pedestal,
+body.skin-stand .pivot-cap { display: none; }
+body.skin-tray .tray {
+  background: url('../assets/ui/tray.png') center / 100% 100% no-repeat;
+  box-shadow: none;
 }

@@ -52,9 +52,8 @@
     timerEnd: 0,
     timerRaf: 0,
     lastTickSec: -1,
-    blankChipEl: null,
-    targetSlotEl: null,
-    targetStack: 0
+    blankChips: [],    // 등식의 빈칸 칩 [{el, d}]
+    targets: []        // 저울의 목표 칸 [{el, d, side, stack}] (중3 단계는 2개)
   };
   var drag = null;
   var lastInputAt = Date.now();
@@ -116,8 +115,7 @@
 
   function renderScale(p) {
     beamEl.innerHTML = '';
-    state.targetSlotEl = null;
-    state.targetStack = 0;
+    state.targets = [];
     var stacks = {};   // '팔:거리' → 그 칸에 쌓인 추 개수
     function stackLevel(side, d) {
       var key = side + ':' + d;
@@ -147,28 +145,37 @@
       });
     });
 
-    // 목표 칸(?) — 그 칸에 이미 추가 있으면 그 위에 표시
-    state.targetStack = stacks[p.blankSide + ':' + p.blankD] || 0;
-    var target = document.createElement('div');
-    target.className = 'target-slot';
-    target.style.left = (slotX(p.blankSide, p.blankD) - WEIGHT_ON_BEAM / 2) + 'px';
-    target.style.bottom = 'calc(100% + ' + (state.targetStack * STACK_STEP) + 'px)';
-    target.innerHTML = '<span class="target-q">?</span>';
-    beamEl.appendChild(target);
-    state.targetSlotEl = target;
+    // 목표 칸(? 또는 x) — 그 칸에 이미 추가 있으면 그 위에 표시.
+    // 미지수가 양쪽에 있는 방정식(중3)은 목표 칸이 양팔에 하나씩 생긴다.
+    p.blanks.forEach(function (b) {
+      var stack = stacks[b.side + ':' + b.d] || 0;
+      var target = document.createElement('div');
+      target.className = 'target-slot';
+      target.style.left = (slotX(b.side, b.d) - WEIGHT_ON_BEAM / 2) + 'px';
+      target.style.bottom = 'calc(100% + ' + (stack * STACK_STEP) + 'px)';
+      target.innerHTML = '<span class="target-q' + (p.x ? ' x' : '') + '">' + (p.x ? 'x' : '?') + '</span>';
+      beamEl.appendChild(target);
+      state.targets.push({ el: target, d: b.d, side: b.side, stack: stack });
+    });
 
     setTilt(computeTilt(null), false);
   }
 
-  /* placedW: 빈칸에 임시/정답으로 올린 무게 (없으면 null) */
-  function computeTilt(placedW) {
+  /* placedW: 목표 칸(들)에 임시/정답으로 올린 무게 (없으면 null) */
+  function torquesWith(placedW) {
     var L = ProblemPool.torque(state.problem.left);
     var R = ProblemPool.torque(state.problem.right);
     if (placedW != null) {
-      var add = placedW * state.problem.blankD;
-      if (state.problem.blankSide === 'left') L += add; else R += add;
+      state.problem.blanks.forEach(function (b) {
+        if (b.side === 'left') L += placedW * b.d; else R += placedW * b.d;
+      });
     }
-    var diff = R - L;   // 양수 → 오른쪽이 무거움 → 시계방향 회전
+    return { L: L, R: R };
+  }
+
+  function computeTilt(placedW) {
+    var t = torquesWith(placedW);
+    var diff = t.R - t.L;   // 양수 → 오른쪽이 무거움 → 시계방향 회전
     return Math.max(-MAX_ANGLE, Math.min(MAX_ANGLE, diff * 1.2));
   }
 
@@ -178,14 +185,9 @@
   }
 
   function heavierSideText(placedW) {
-    var L = ProblemPool.torque(state.problem.left);
-    var R = ProblemPool.torque(state.problem.right);
-    if (placedW != null) {
-      var add = placedW * state.problem.blankD;
-      if (state.problem.blankSide === 'left') L += add; else R += add;
-    }
-    if (L === R) return null;
-    return L > R ? '왼쪽' : '오른쪽';
+    var t = torquesWith(placedW);
+    if (t.L === t.R) return null;
+    return t.L > t.R ? '왼쪽' : '오른쪽';
   }
 
   /* ══════════ 등식 렌더링 ══════════ */
@@ -195,9 +197,20 @@
       : '<span class="t-w">' + w + '</span>';
   }
 
+  function blankChipHTML(p, d) {
+    if (p.x) {
+      // 방정식 표기: x, 2x, 3x … (계수 = 거리)
+      return (d > 1 ? '<span class="t-w">' + d + '</span>' : '') +
+             '<span class="blank-box x">x</span>';
+    }
+    return d > 1
+      ? '<span class="blank-box">?</span><span class="t-x">×</span><span class="t-d">' + d + '</span>'
+      : '<span class="blank-box">?</span>';
+  }
+
   function renderEquation(p) {
     equationEl.innerHTML = '';
-    state.blankChipEl = null;
+    state.blankChips = [];
 
     function addChip(html, cls) {
       var s = document.createElement('span');
@@ -215,28 +228,33 @@
 
     ['left', 'right'].forEach(function (side, si) {
       if (si === 1) addOp('=');
-      var chips = p[side].map(function (t) { return { html: termHTML(t.w, t.d), blank: false }; });
-      if (p.blankSide === side) {
-        chips.push({
-          html: p.blankD > 1
-            ? '<span class="blank-box">?</span><span class="t-x">×</span><span class="t-d">' + p.blankD + '</span>'
-            : '<span class="blank-box">?</span>',
-          blank: true
-        });
-      }
+      var knowns = p[side].map(function (t) { return { html: termHTML(t.w, t.d), blank: false }; });
+      var blanks = p.blanks
+        .filter(function (b) { return b.side === side; })
+        .map(function (b) { return { html: blankChipHTML(p, b.d), blank: true, d: b.d }; });
+      // 방정식(x) 표기에서는 미지수 항을 앞에 쓴다: 3x + 4 = 16
+      var chips = p.x ? blanks.concat(knowns) : knowns.concat(blanks);
       chips.forEach(function (c, i) {
         if (i > 0) addOp('+');
         var el = addChip(c.html, c.blank ? 'blank' : '');
-        if (c.blank) state.blankChipEl = el;
+        if (c.blank) state.blankChips.push({ el: el, d: c.d });
       });
     });
   }
 
   function fillBlank(answer) {
-    if (!state.blankChipEl) return;
-    var box = state.blankChipEl.querySelector('.blank-box');
-    if (box) { box.textContent = answer; box.classList.add('filled'); }
-    state.blankChipEl.classList.add('solved');
+    var p = state.problem;
+    state.blankChips.forEach(function (c) {
+      if (p.x && c.d > 1) {
+        // 3x → 3×6 형태로 채워 계산 결과가 보이게 한다
+        c.el.innerHTML = '<span class="t-w">' + c.d + '</span><span class="t-x">×</span>' +
+                         '<span class="blank-box filled">' + answer + '</span>';
+      } else {
+        var box = c.el.querySelector('.blank-box');
+        if (box) { box.textContent = answer; box.classList.add('filled'); box.classList.remove('x'); }
+      }
+      c.el.classList.add('solved');
+    });
   }
 
   /* ══════════ 보관함 렌더링 ══════════ */
@@ -282,18 +300,18 @@
     var p = clientToStage(cx, cy);
     drag.ghost.style.left = (p.x - 65) + 'px';
     drag.ghost.style.top = (p.y - 80) + 'px';
-    // 목표 칸 위에 있으면 하이라이트
-    if (state.targetSlotEl) {
-      state.targetSlotEl.classList.toggle('hover', isOverTarget(cx, cy));
-    }
+    // 목표 칸 위에 있으면 하이라이트 (양쪽 미지수면 두 칸 모두)
+    var over = isOverTarget(cx, cy);
+    state.targets.forEach(function (t) { t.el.classList.toggle('hover', over); });
   }
 
   function isOverTarget(cx, cy) {
-    if (!state.targetSlotEl) return false;
-    var r = state.targetSlotEl.getBoundingClientRect();
     var pad = 60 * stageScale();
-    return cx > r.left - pad && cx < r.right + pad &&
-           cy > r.top - pad && cy < r.bottom + pad * 1.6;
+    return state.targets.some(function (t) {
+      var r = t.el.getBoundingClientRect();
+      return cx > r.left - pad && cx < r.right + pad &&
+             cy > r.top - pad && cy < r.bottom + pad * 1.6;
+    });
   }
 
   function onWeightPointerMove(e) {
@@ -308,7 +326,7 @@
     d.src.removeEventListener('pointermove', onWeightPointerMove);
     d.src.removeEventListener('pointerup', onWeightPointerUp);
     d.src.removeEventListener('pointercancel', onWeightPointerUp);
-    if (state.targetSlotEl) state.targetSlotEl.classList.remove('hover');
+    state.targets.forEach(function (t) { t.el.classList.remove('hover'); });
 
     if (!state.locked && !state.solved && isOverTarget(e.clientX, e.clientY)) {
       d.ghost.remove();
@@ -339,20 +357,22 @@
     else fail(n);
   }
 
+  /* 목표 칸(들)에 추 올리기 — 양쪽 미지수면 같은 추가 양팔에 올라간다 */
   function placeWeightOnTarget(n) {
-    var p = state.problem;
-    var w = makeWeight(n, 'on-beam placed');
-    w.style.left = (slotX(p.blankSide, p.blankD) - WEIGHT_ON_BEAM / 2) + 'px';
-    w.style.bottom = 'calc(100% + ' + (state.targetStack * STACK_STEP) + 'px)';
-    beamEl.appendChild(w);
-    return w;
+    return state.targets.map(function (t) {
+      var w = makeWeight(n, 'on-beam placed');
+      w.style.left = (slotX(t.side, t.d) - WEIGHT_ON_BEAM / 2) + 'px';
+      w.style.bottom = 'calc(100% + ' + (t.stack * STACK_STEP) + 'px)';
+      beamEl.appendChild(w);
+      return w;
+    });
   }
 
   function succeed() {
     state.solved = true;
     state.locked = true;
     stopTimer();
-    if (state.targetSlotEl) state.targetSlotEl.classList.add('done');
+    state.targets.forEach(function (t) { t.el.classList.add('done'); });
     placeWeightOnTarget(state.problem.answer);
     setTilt(0, true);
     fillBlank(state.problem.answer);
@@ -379,8 +399,8 @@
     state.wrongAttempts++;
     SFX.wrong();
 
-    var temp = placeWeightOnTarget(n);
-    temp.classList.add('temp-wrong');
+    var temps = placeWeightOnTarget(n);
+    temps.forEach(function (t) { t.classList.add('temp-wrong'); });
     setTilt(computeTilt(n), false);
     scaleArea.classList.add('shake');
 
@@ -391,7 +411,7 @@
 
     setTimeout(function () {
       scaleArea.classList.remove('shake');
-      temp.remove();
+      temps.forEach(function (t) { t.remove(); });
       setTilt(computeTilt(null), false);
       state.locked = false;
     }, 1300);
@@ -405,7 +425,7 @@
     SFX.timeout();
 
     // 정답을 보여주며 수평이 되는 모습으로 학습 기회 제공
-    if (state.targetSlotEl) state.targetSlotEl.classList.add('done');
+    state.targets.forEach(function (t) { t.el.classList.add('done'); });
     placeWeightOnTarget(state.problem.answer);
     setTilt(0, true);
     fillBlank(state.problem.answer);
@@ -487,19 +507,27 @@
     state.wrongAttempts = 0;
 
     qProgressEl.textContent = '문제 ' + (state.qIndex + 1) + ' / ' + TOTAL_QUESTIONS;
+    $('q-grade').textContent = ProblemPool.TIER_INFO[p.tier - 1].grade + ' 수준';
     renderStars();
 
     // 수식 카드를 저울과 부딪히지 않는 모서리에 배치:
-    // 빈칸이 있는 팔은 가벼워서 위로 올라가므로 그 반대편 위 모서리에 둔다.
+    // 무거운(내려가는) 팔 쪽 위 모서리에 두면 올라가는 추와 겹치지 않는다.
+    var t0 = torquesWith(null);
     var panel = document.querySelector('.equation-panel');
-    panel.classList.toggle('right', p.blankSide === 'left');
-    var termCount = p.left.length + p.right.length + 1;
+    panel.classList.toggle('right', t0.R > t0.L);
+    var termCount = p.left.length + p.right.length + p.blanks.length;
     panel.classList.toggle('compact', termCount >= 5);
 
     renderEquation(p);
     renderScale(p);
     renderTray(p);
-    messageEl.innerHTML = '무게추를 끌어서 반짝이는 <b>?</b> 칸에 올려 보세요! <span class="msg-hint">(무게 × 거리를 계산해요)</span>';
+    if (p.x) {
+      messageEl.innerHTML = p.blanks.length > 1
+        ? '<b>x</b>의 값을 구해 보세요! 양쪽 <b>x</b> 칸에 <b>같은 무게추</b>가 함께 올라가요.'
+        : '<b>x</b>의 값을 구해서 무게추를 <b>x</b> 칸에 올려 보세요!';
+    } else {
+      messageEl.innerHTML = '무게추를 끌어서 반짝이는 <b>?</b> 칸에 올려 보세요! <span class="msg-hint">(무게 × 거리를 계산해요)</span>';
+    }
     timerBar.style.width = '100%';
     startTimer();
   }
@@ -704,6 +732,23 @@
     if (!m) SFX.click();
   });
   $('btn-mute').textContent = SFX.isMuted() ? '🔇' : '🔊';
+
+  /* ══════════ 디자인 교체 슬롯 감지 ══════════
+   * assets/ui/ 에 이미지가 있으면 body 클래스로 스킨을 켠다.
+   * (규격: docs/디자인_가이드.md) */
+  [
+    ['assets/ui/bg-start.png', 'skin-bg-start'],
+    ['assets/ui/bg-game.png', 'skin-bg-game'],
+    ['assets/ui/bg-result.png', 'skin-bg-result'],
+    ['assets/ui/title.png', 'skin-title'],
+    ['assets/ui/beam.png', 'skin-beam'],
+    ['assets/ui/stand.png', 'skin-stand'],
+    ['assets/ui/tray.png', 'skin-tray']
+  ].forEach(function (pair) {
+    var im = new Image();
+    im.onload = function () { document.body.classList.add(pair[1]); };
+    im.src = pair[0];
+  });
 
   /* ══════════ 전시(키오스크) 대응 ══════════ */
   // 방치 시 시작화면 복귀

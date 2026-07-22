@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>문제풀 전체 보기 — 수평을 맞춰라!</title>
+<style>
+  @font-face {
+    font-family: 'Sunflower';
+    src: url('assets/fonts/Sunflower-Bold.ttf') format('truetype');
+    font-weight: 300 900;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Sunflower', 'Malgun Gothic', sans-serif;
+    background: #f2f7fb;
+    color: #33415c;
+    padding: 40px 24px 80px;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; }
+  h1 { font-size: 34px; color: #2d4a66; margin-bottom: 6px; }
+  .sub { color: #7d8aa0; margin-bottom: 30px; font-size: 15px; }
+  .tier { background: #fff; border-radius: 16px; padding: 22px 28px; margin-bottom: 22px;
+          box-shadow: 0 4px 14px rgba(70,100,140,.08); }
+  .tier h2 { font-size: 22px; margin-bottom: 4px; }
+  .tier h2 .grade { display: inline-block; background: #5ec8e5; color: #fff; border-radius: 999px;
+                    font-size: 15px; padding: 2px 14px; margin-right: 10px; vertical-align: 3px; }
+  .tier .desc { color: #8a97ad; font-size: 14px; margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 17px; }
+  th, td { padding: 7px 10px; border-bottom: 1px solid #edf1f6; text-align: left; }
+  th { color: #7d8aa0; font-size: 13px; font-weight: 700; }
+  td.eq { font-size: 19px; letter-spacing: .5px; }
+  td.ans { color: #e08600; font-weight: 900; }
+  td.beam { color: #8a97ad; font-size: 14px; }
+  .note { background: #fff3c9; border: 2px dashed #f0b429; border-radius: 12px;
+          padding: 14px 20px; margin-bottom: 26px; font-size: 15px; color: #7a5b1e; }
+  @media print { .tier { box-shadow: none; border: 1px solid #ddd; page-break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>⚖️ 수평을 맞춰라! — 문제풀 전체 (100문제)</h1>
+  <p class="sub">난이도 10단계(초1~중3) × 각 10문제 · 게임에서 n번째 문제는 n단계에서 랜덤으로 1문제 출제 · 이 페이지는 검수용입니다</p>
+  <div class="note">
+    저울 배치 읽는 법: <b>7@2</b>는 "무게 7 추를 거리 2칸에 올림"이라는 뜻입니다.
+    수평 조건은 <b>무게×거리의 합이 양쪽에서 같다</b>이며, 이것이 곧 위의 등식입니다.
+    <b>★</b>는 정답 추를 올려야 하는 목표 칸입니다.
+  </div>
+  <div id="list"></div>
+</div>
+<script src="js/problems.js"></script>
+<script>
+(function () {
+  var pool = ProblemPool.generate();
+  var host = document.getElementById('list');
+
+  function beamText(p) {
+    function side(name) {
+      var parts = p[name].map(function (t) { return t.w + '@' + t.d; });
+      p.blanks.forEach(function (b) {
+        if (b.side === name) parts.push('★@' + b.d);
+      });
+      return parts.join(', ') || '(비어 있음)';
+    }
+    return '왼팔: ' + side('left') + '  |  오른팔: ' + side('right');
+  }
+
+  pool.forEach(function (list, ti) {
+    var info = ProblemPool.TIER_INFO[ti];
+    var div = document.createElement('div');
+    div.className = 'tier';
+    var rows = list.map(function (p, i) {
+      return '<tr><td>' + (i + 1) + '</td>' +
+        '<td class="eq">' + ProblemPool.equationText(p) + '</td>' +
+        '<td class="ans">' + (p.x ? 'x = ' : '□ = ') + p.answer + '</td>' +
+        '<td class="beam">' + beamText(p) + '</td></tr>';
+    }).join('');
+    div.innerHTML =
+      '<h2><span class="grade">' + info.grade + '</span>' + (ti + 1) + '단계 — ' + info.label + '</h2>' +
+      '<p class="desc">문제를 바꾸고 싶으면 js/problems.js 의 ' + (ti + 1) + '단계 출제 규칙을 수정하세요.</p>' +
+      '<table><tr><th>#</th><th>등식</th><th>정답</th><th>저울 배치</th></tr>' + rows + '</table>';
+    host.appendChild(div);
+  });
+})();
+</script>
+</body>
+</html>
