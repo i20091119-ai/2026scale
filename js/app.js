@@ -806,20 +806,6 @@
   $('btn-rank-restart').addEventListener('click', function () { SFX.click(); startGame(); });
   $('btn-rank-home').addEventListener('click', function () { SFX.click(); goHome(); });
 
-  /* ══════════ 시작 화면: 떠다니는 추 장식 ══════════ */
-  (function buildFloatWeights() {
-    var host = document.querySelector('.float-weights');
-    var nums = [3, 7, 1, 5, 9, 2, 8, 4];
-    nums.forEach(function (n, i) {
-      var w = makeWeight(n, 'float-weight');
-      w.style.left = (6 + (i * 12.5) % 90) + '%';
-      w.style.top = (10 + ((i * 37) % 70)) + '%';
-      w.style.animationDelay = (i * 0.7) + 's';
-      w.style.animationDuration = (5 + (i % 3) * 1.4) + 's';
-      host.appendChild(w);
-    });
-  })();
-
   /* ══════════ 게임 방법 팝업 ══════════ */
   var howtoModal = $('howto-modal');
 
