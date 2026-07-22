@@ -10,5 +10,5 @@
  * 설정 방법: docs/랭킹_서버_설정.md 참고
  * ═══════════════════════════════════════════════════════════════ */
 window.GameConfig = {
-  RANKING_API_URL: ''
+  RANKING_API_URL: 'https://script.google.com/macros/s/AKfycbwCQjHP1gu2riFBoqijCyU_ZTwphApB1ClDy0JsjuNyHtvrf5xCu0xspGV7e-0wHEeY/exec'
 };
