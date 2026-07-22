@@ -60,9 +60,19 @@
   var drag = null;
   var lastInputAt = Date.now();
 
-  /* ══════════ 화면 배율 (1920×1080 → 실제 화면) ══════════ */
+  /* ══════════ 화면 배율 ══════════
+   * 기본 무대는 1920×1080이지만, 화면 비율이 다르면 무대의 폭(또는
+   * 높이)을 늘려 여백(레터박스) 없이 꽉 차게 만든다. UI는 모두 중앙
+   * 기준이라 늘어난 부분에는 배경이 자연스럽게 이어진다. */
+  var STAGE_MAX_W = 2560, STAGE_MAX_H = 1440;   // 초광폭·세로형 화면 안전 한계
+
   function fitStage() {
-    var s = Math.min(window.innerWidth / STAGE_W, window.innerHeight / STAGE_H);
+    var aspect = window.innerWidth / window.innerHeight;
+    var w = Math.min(STAGE_MAX_W, Math.max(STAGE_W, Math.round(STAGE_H * aspect)));
+    var h = Math.min(STAGE_MAX_H, Math.max(STAGE_H, Math.round(STAGE_W / aspect)));
+    stage.style.width = w + 'px';
+    stage.style.height = h + 'px';
+    var s = Math.min(window.innerWidth / w, window.innerHeight / h);
     stage.style.transform = 'translate(-50%, -50%) scale(' + s + ')';
     stage.dataset.scale = s;
   }
