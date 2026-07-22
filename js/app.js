@@ -9,7 +9,7 @@
   var STAGE_W = 1920, STAGE_H = 1080;
   var BEAM_W = 1100, BEAM_H = 26, SLOT_GAP = 125;   // 거리 1칸 = 125px
   var WEIGHT_ON_BEAM = 104;                          // 저울 위 추 크기(px)
-  var MAX_ANGLE = 13;                                // 최대 기울기(도)
+  var MAX_ANGLE = 11;                                // 최대 기울기(도)
   var TOTAL_QUESTIONS = 10;
   var TIME_LIMIT = 30;                               // 문제당 초
   var IDLE_LIMIT_MS = 90000;                         // 방치 → 시작화면
@@ -20,7 +20,9 @@
   var screens = {
     start: $('screen-start'),
     game: $('screen-game'),
-    result: $('screen-result')
+    result: $('screen-result'),
+    name: $('screen-name'),
+    ranking: $('screen-ranking')
   };
   var beamEl = $('beam');
   var scaleArea = $('scale-area');
@@ -42,7 +44,6 @@
     qIndex: 0,
     problem: null,
     score: 0,
-    streak: 0,
     correctCount: 0,
     wrongAttempts: 0,
     results: [],        // 문제별 true/false
@@ -357,13 +358,11 @@
     fillBlank(state.problem.answer);
     SFX.correct();
 
-    var timeLeft = Math.max(0, Math.ceil((state.timerEnd - performance.now()) / 1000));
-    var base = Math.max(100 - state.wrongAttempts * 20, 40);
-    var bonusTime = timeLeft * 2;
-    var bonusStreak = Math.min(state.streak * 10, 50);
-    var points = base + bonusTime + bonusStreak;
+    // 점수 = 문제 단계 × 남은 시간(초)
+    var timeLeft = Math.max(1, Math.ceil((state.timerEnd - performance.now()) / 1000));
+    var tier = state.qIndex + 1;
+    var points = tier * timeLeft;
 
-    state.streak++;
     state.correctCount++;
     state.results.push(true);
     animateScore(state.score, state.score + points);
@@ -371,7 +370,7 @@
     renderStars();
 
     messageEl.innerHTML = '⚖️ 수평이 되었어요! <b>무게×거리</b>가 양쪽 모두 같아요.';
-    showFeedback('🎉 정답이에요!', '+' + points + '점', 'good');
+    showFeedback('🎉 정답이에요!', '+' + points + '점 (' + tier + '단계 × ' + timeLeft + '초)', 'good');
     setTimeout(nextQuestion, 1800);
   }
 
@@ -411,7 +410,6 @@
     setTilt(0, true);
     fillBlank(state.problem.answer);
 
-    state.streak = 0;
     state.results.push(false);
     renderStars();
     messageEl.innerHTML = '⏰ 시간 초과! 정답은 <b>' + state.problem.answer + '</b>이었어요.';
@@ -474,7 +472,6 @@
     state.problems = ProblemPool.drawGame(pool);
     state.qIndex = 0;
     state.score = 0;
-    state.streak = 0;
     state.correctCount = 0;
     state.results = [];
     scoreEl.textContent = '0';
@@ -491,6 +488,14 @@
 
     qProgressEl.textContent = '문제 ' + (state.qIndex + 1) + ' / ' + TOTAL_QUESTIONS;
     renderStars();
+
+    // 수식 카드를 저울과 부딪히지 않는 모서리에 배치:
+    // 빈칸이 있는 팔은 가벼워서 위로 올라가므로 그 반대편 위 모서리에 둔다.
+    var panel = document.querySelector('.equation-panel');
+    panel.classList.toggle('right', p.blankSide === 'left');
+    var termCount = p.left.length + p.right.length + 1;
+    panel.classList.toggle('compact', termCount >= 5);
+
     renderEquation(p);
     renderScale(p);
     renderTray(p);
@@ -511,10 +516,11 @@
     $('result-detail').textContent =
       TOTAL_QUESTIONS + '문제 중 ' + state.correctCount + '문제 정답';
 
+    // 최대 점수 = (1+2+…+10) × 30초 = 1650점
     var rank;
-    if (state.score >= 1700) rank = '🏆 수학 천재!';
-    else if (state.score >= 1200) rank = '🎓 수학 박사!';
-    else if (state.score >= 700) rank = '🌟 수학 우등생!';
+    if (state.score >= 1250) rank = '🏆 수학 천재!';
+    else if (state.score >= 850) rank = '🎓 수학 박사!';
+    else if (state.score >= 450) rank = '🌟 수학 우등생!';
     else if (state.score > 0) rank = '💪 멋진 도전자!';
     else rank = '🍀 다음엔 잘할 수 있어요!';
     $('result-rank').textContent = rank;
@@ -548,6 +554,131 @@
     video.classList.remove('visible');
     showScreen('start');
   }
+
+  /* ══════════ 명예의 전당 (랭킹, localStorage 저장) ══════════ */
+  var RANK_KEY = 'gnmc-scale-ranking';
+  var NAME_MAX = 8;
+  var composer = Hangul.create();
+
+  function loadRanking() {
+    try { return JSON.parse(localStorage.getItem(RANK_KEY)) || []; }
+    catch (e) { return []; }
+  }
+
+  function addRanking(name, score) {
+    var list = loadRanking();
+    var entry = { id: Date.now() + '-' + Math.floor(Math.random() * 1e6), n: name, s: score, d: Date.now() };
+    list.push(entry);
+    list.sort(function (a, b) { return b.s - a.s || a.d - b.d; });
+    localStorage.setItem(RANK_KEY, JSON.stringify(list.slice(0, 50)));
+    return entry;
+  }
+
+  function showRankingScreen(highlightId) {
+    var list = loadRanking().slice(0, 10);
+    var host = $('ranking-list');
+    if (!list.length) {
+      host.innerHTML = '<li class="rank-empty">아직 기록이 없어요. 첫 번째 주인공이 되어 보세요!</li>';
+    } else {
+      var medals = ['🥇', '🥈', '🥉'];
+      host.innerHTML = list.map(function (e, i) {
+        var when = new Date(e.d);
+        var dateStr = (when.getMonth() + 1) + '.' + when.getDate();
+        return '<li class="rank-row' + (e.id === highlightId ? ' me' : '') + '">' +
+          '<span class="rank-no">' + (medals[i] || (i + 1) + '위') + '</span>' +
+          '<span class="rank-name">' + escapeHTML(e.n) + '</span>' +
+          '<span class="rank-date">' + dateStr + '</span>' +
+          '<span class="rank-score">' + e.s + '점</span></li>';
+      }).join('');
+    }
+    Confetti.stop();
+    showScreen('ranking');
+  }
+
+  function escapeHTML(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  /* ── 닉네임 입력 + 화면 키보드 ── */
+  var OSK_PAGES = {
+    '한글': [
+      ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ'],
+      ['ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'],
+      ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅛ'],
+      ['ㅜ', 'ㅠ', 'ㅡ', 'ㅣ', '⌫']
+    ],
+    'ABC': [
+      'ABCDEFGHIJ'.split(''),
+      'KLMNOPQRS'.split(''),
+      'TUVWXYZ'.split('').concat(['⌫'])
+    ],
+    '123': [
+      '1234567890'.split(''),
+      ['⭐', '🌙', '❤', '😀', '🐥', '⚖', '⌫']
+    ]
+  };
+
+  function renderOSK(pageName) {
+    var host = $('osk');
+    host.innerHTML = '';
+    OSK_PAGES[pageName].forEach(function (row) {
+      var rowEl = document.createElement('div');
+      rowEl.className = 'osk-row';
+      row.forEach(function (key) {
+        var b = document.createElement('button');
+        b.className = 'osk-key' + (key === '⌫' ? ' osk-back' : '');
+        b.textContent = key;
+        b.addEventListener('click', function () { onOSKKey(key); });
+        rowEl.appendChild(b);
+      });
+      host.appendChild(rowEl);
+    });
+    document.querySelectorAll('.osk-tab').forEach(function (t) {
+      t.classList.toggle('active', t.dataset.page === pageName);
+    });
+  }
+
+  function onOSKKey(key) {
+    SFX.click();
+    if (key === '⌫') composer.backspace();
+    else if (composer.length() < NAME_MAX) composer.input(key);
+    $('name-display').textContent = composer.text();
+  }
+
+  function showNameEntry() {
+    Confetti.stop();
+    composer.reset();
+    $('name-display').textContent = '';
+    $('name-score').textContent = state.score;
+    renderOSK('한글');
+    showScreen('name');
+  }
+
+  function submitName() {
+    var name = composer.text().trim();
+    if (!name) {
+      $('name-display').parentElement.classList.remove('need');
+      void $('name-display').parentElement.offsetWidth;   // 애니메이션 재시작
+      $('name-display').parentElement.classList.add('need');
+      SFX.wrong();
+      return;
+    }
+    SFX.correct();
+    var entry = addRanking(name, state.score);
+    showRankingScreen(entry.id);
+  }
+
+  document.querySelectorAll('.osk-tab').forEach(function (t) {
+    t.addEventListener('click', function () { SFX.click(); renderOSK(t.dataset.page); });
+  });
+  $('btn-rank-entry').addEventListener('click', function () { SFX.click(); showNameEntry(); });
+  $('btn-name-ok').addEventListener('click', submitName);
+  $('btn-name-skip').addEventListener('click', function () { SFX.click(); showRankingScreen(null); });
+  $('btn-hall').addEventListener('click', function () { SFX.unlock(); SFX.click(); showRankingScreen(null); });
+  $('btn-rank-restart').addEventListener('click', function () { SFX.click(); startGame(); });
+  $('btn-rank-home').addEventListener('click', function () { SFX.click(); goHome(); });
 
   /* ══════════ 시작 화면: 떠다니는 추 장식 ══════════ */
   (function buildFloatWeights() {

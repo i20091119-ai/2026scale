@@ -63,16 +63,38 @@ img { -webkit-user-drag: none; user-select: none; }
 }
 .icon-btn:active { transform: translateY(3px); box-shadow: none; }
 
+.big-btn.alt {
+  background: linear-gradient(180deg, #6ed0ea, #3d9fd6);
+  box-shadow: 0 10px 0 #2b7cab, 0 18px 30px rgba(0,0,0,.18);
+}
+.big-btn.alt:active { box-shadow: 0 2px 0 #2b7cab, 0 6px 12px rgba(0,0,0,.15); }
+
+.ghost-btn {
+  font-family: inherit;
+  font-size: 32px; font-weight: 800;
+  color: #4a5568;
+  background: rgba(255,255,255,.8);
+  border: 3px solid #c6d2e0;
+  border-radius: 999px;
+  padding: 14px 46px;
+  cursor: pointer;
+}
+.ghost-btn:active { transform: translateY(3px); background: #eef3f8; }
+
 /* ═══════════ 공통: 무게추 ═══════════ */
 .weight {
   position: relative;
   width: 130px; height: 152px;
   flex: 0 0 auto;
 }
+/* 무게추 일러스트는 3840×2160(가로형, 투명 배경)이라
+ * 세로를 기준으로 맞추고 가운데의 추 그림 부분만 보이게 한다.
+ * 좌우 여백은 투명이라 이웃과 겹쳐도 문제없다. */
 .w-img {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  object-fit: contain;
+  position: absolute; top: 0; left: 50%;
+  transform: translateX(-50%);
+  height: 100%; width: auto;
+  max-width: none;
   display: none;
 }
 .weight.has-img .w-img { display: block; }
@@ -253,27 +275,40 @@ img { -webkit-user-drag: none; user-select: none; }
 }
 @keyframes blink { 50% { opacity: .55; } }
 
-/* ── 등식 패널 ── */
+/* ── 등식 패널 ──
+ * 저울(특히 위로 올라가는 팔의 추)과 겹치지 않도록 위 모서리에 배치.
+ * 빈칸 팔이 왼쪽이면 오른쪽 위(.right), 아니면 왼쪽 위. */
 .equation-panel {
-  height: 150px;
-  display: flex; align-items: center; justify-content: center;
+  position: absolute;
+  top: 126px; left: 36px;
+  z-index: 6;
+  max-width: 800px;
+  background: rgba(255, 255, 255, .8);
+  border: 4px solid #fff;
+  border-radius: 28px;
+  padding: 18px 26px;
+  box-shadow: 0 12px 30px rgba(70, 100, 140, .18);
 }
+.equation-panel.right { left: auto; right: 36px; }
 .equation {
-  display: flex; align-items: center; gap: 20px;
+  display: flex; align-items: center; gap: 14px;
+  flex-wrap: wrap;
   font-weight: 900;
 }
 .chip {
-  font-size: 58px;
+  font-size: 46px;
   background: #ffffff;
-  border-radius: 22px;
-  border-bottom: 7px solid #e3dbc9;
-  padding: 12px 30px;
-  box-shadow: 0 8px 18px rgba(90,110,140,.12);
+  border-radius: 18px;
+  border-bottom: 6px solid #e3dbc9;
+  padding: 8px 22px;
+  box-shadow: 0 6px 14px rgba(90,110,140,.12);
   color: #33415c;
 }
-.chip .t-x { margin: 0 8px; color: #a0813c; font-size: 46px; }
+.chip .t-x { margin: 0 6px; color: #a0813c; font-size: .8em; }
 .chip .t-d { color: #a0813c; }
-.op { font-size: 58px; font-weight: 900; color: #7d8aa0; }
+.op { font-size: 46px; font-weight: 900; color: #7d8aa0; }
+.equation-panel.compact .chip { font-size: 36px; padding: 6px 16px; }
+.equation-panel.compact .op { font-size: 36px; }
 .chip.blank {
   background: #fff5cf;
   border: 4px dashed #f0b429;
@@ -286,7 +321,7 @@ img { -webkit-user-drag: none; user-select: none; }
 }
 .blank-box {
   display: inline-block;
-  min-width: 74px;
+  min-width: 1.3em;
   text-align: center;
   color: #d99a12;
 }
@@ -296,7 +331,7 @@ img { -webkit-user-drag: none; user-select: none; }
 /* ── 저울 ── */
 .scale-area {
   position: relative;
-  height: 470px;
+  height: 590px;
   flex: 0 0 auto;
 }
 .scale-area.shake { animation: shake .5s; }
@@ -310,7 +345,7 @@ img { -webkit-user-drag: none; user-select: none; }
 
 .beam-assembly {
   position: absolute;
-  left: 50%; top: 190px;
+  left: 50%; top: 430px;
   width: 0; height: 0;
 }
 .beam {
@@ -334,15 +369,15 @@ img { -webkit-user-drag: none; user-select: none; }
 }
 .pillar {
   position: absolute;
-  left: 50%; top: 200px;
-  width: 40px; height: 235px;
+  left: 50%; top: 438px;
+  width: 40px; height: 116px;
   transform: translateX(-50%);
   background: linear-gradient(90deg, #b98c5f, #8a6238 60%, #6f4d2a);
   border-radius: 12px;
 }
 .pedestal {
   position: absolute;
-  left: 50%; top: 420px;
+  left: 50%; top: 546px;
   width: 340px; height: 40px;
   transform: translateX(-50%);
   background: linear-gradient(180deg, #a97e52, #6f4d2a);
@@ -535,4 +570,116 @@ img { -webkit-user-drag: none; user-select: none; }
 .result-score-label { font-size: 30px; font-weight: 800; color: #7d8aa0; }
 .result-score { font-size: 110px; font-weight: 900; color: #e08600; line-height: 1.1; }
 .result-detail { font-size: 32px; font-weight: 700; color: #44506a; }
+.result-btns { display: flex; gap: 30px; }
 .result-logo-line { font-size: 26px; font-weight: 700; color: rgba(255,255,255,.75); }
+
+/* ═══════════ 닉네임 입력 화면 ═══════════ */
+#screen-name {
+  background: linear-gradient(180deg, #bfe6ff 0%, #e6f6ff 50%, #fff6e0 100%);
+}
+.name-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 26px;
+}
+.name-title { font-size: 62px; font-weight: 900; color: #2d4a66; }
+.name-score {
+  font-size: 34px; font-weight: 800; color: #7a5b1e;
+  background: #fff3c9;
+  border: 3px solid #f0b429;
+  border-radius: 999px;
+  padding: 8px 40px;
+}
+.name-display-wrap {
+  min-width: 560px;
+  min-height: 108px;
+  background: #fff;
+  border: 5px solid #5ec8e5;
+  border-radius: 26px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 10px 30px;
+  box-shadow: inset 0 4px 10px rgba(70,100,140,.1);
+}
+.name-display-wrap.need { animation: shake .5s; border-color: #f0506e; }
+.name-display {
+  font-size: 58px; font-weight: 900; color: #2d4a66;
+  letter-spacing: 4px;
+  min-height: 72px;
+}
+.name-cursor {
+  width: 5px; height: 60px;
+  background: #5ec8e5;
+  margin-left: 6px;
+  animation: blink 1s steps(2) infinite;
+}
+.osk-tabs { display: flex; gap: 14px; }
+.osk-tab {
+  font-family: inherit;
+  font-size: 28px; font-weight: 800;
+  color: #6a7891;
+  background: rgba(255,255,255,.7);
+  border: 3px solid #c6d2e0;
+  border-radius: 999px;
+  padding: 8px 38px;
+  cursor: pointer;
+}
+.osk-tab.active { color: #fff; background: #5ec8e5; border-color: #3aa8c9; }
+.osk { display: flex; flex-direction: column; gap: 12px; }
+.osk-row { display: flex; gap: 12px; justify-content: center; }
+.osk-key {
+  font-family: inherit;
+  width: 86px; height: 86px;
+  font-size: 38px; font-weight: 800;
+  color: #33415c;
+  background: #fff;
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 5px 0 #cfd8e4;
+  cursor: pointer;
+}
+.osk-key:active { transform: translateY(4px); box-shadow: none; background: #eaf3fb; }
+.osk-back { background: #ffe3e9; color: #d94f6e; box-shadow: 0 5px 0 #e8b3c0; }
+.name-btns { display: flex; gap: 26px; align-items: center; margin-top: 6px; }
+
+/* ═══════════ 랭킹(명예의 전당) 화면 ═══════════ */
+#screen-ranking {
+  background: linear-gradient(180deg, #2d4a66 0%, #4a6f96 60%, #7fa8c9 100%);
+}
+.ranking-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 30px;
+}
+.ranking-title {
+  font-size: 72px; font-weight: 900; color: #ffe08a;
+  text-shadow: 0 6px 18px rgba(0,0,0,.3);
+}
+.ranking-list {
+  list-style: none;
+  width: 900px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.rank-row {
+  display: flex; align-items: center; gap: 24px;
+  background: rgba(255,255,255,.94);
+  border-radius: 20px;
+  padding: 12px 34px;
+  font-weight: 800;
+}
+.rank-row.me {
+  background: #fff3c9;
+  border: 4px solid #f0b429;
+  animation: blank-pulse 1.3s ease-in-out 3;
+}
+.rank-no { font-size: 36px; width: 96px; color: #2d4a66; }
+.rank-name { font-size: 38px; flex: 1; color: #33415c; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank-date { font-size: 26px; color: #8a97ad; }
+.rank-score { font-size: 38px; color: #e08600; width: 170px; text-align: right; }
+.rank-empty {
+  text-align: center;
+  font-size: 34px; font-weight: 700;
+  color: rgba(255,255,255,.9);
+  padding: 40px 0;
+}

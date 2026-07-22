@@ -45,7 +45,8 @@
       <div class="howto-tip">💡 무게추가 <b>가운데에서 멀수록</b> 더 무겁게 작용해요! (무게 × 거리)</div>
 
       <button id="btn-start" class="big-btn">게임 시작 ▶</button>
-      <p class="start-meta">총 10문제 · 문제당 30초 · 풀수록 어려워져요!</p>
+      <button id="btn-hall" class="ghost-btn">🏆 명예의 전당</button>
+      <p class="start-meta">총 10문제 · 문제당 30초 · 점수 = 문제 단계 × 남은 시간</p>
     </div>
   </section>
 
@@ -107,14 +108,51 @@
         <div id="result-score" class="result-score">0</div>
         <div id="result-detail" class="result-detail">10문제 중 10문제 정답</div>
       </div>
-      <button id="btn-restart" class="big-btn">다시 도전하기 🔄</button>
+      <div class="result-btns">
+        <button id="btn-rank-entry" class="big-btn">🏆 랭킹 등록하기</button>
+        <button id="btn-restart" class="big-btn alt">다시 도전하기 🔄</button>
+      </div>
       <p class="result-logo-line">경상남도교육청 경남수학문화관 · GNMC</p>
+    </div>
+  </section>
+
+  <!-- ══════════ 닉네임 입력 화면 ══════════ -->
+  <section id="screen-name" class="screen">
+    <div class="name-center">
+      <h2 class="name-title">🏆 명예의 전당에 이름을 남겨요!</h2>
+      <div class="name-score">내 점수 <b id="name-score">0</b>점</div>
+      <div class="name-display-wrap">
+        <div id="name-display" class="name-display"></div><span class="name-cursor"></span>
+      </div>
+      <div class="osk-tabs">
+        <button class="osk-tab active" data-page="한글">한글</button>
+        <button class="osk-tab" data-page="ABC">ABC</button>
+        <button class="osk-tab" data-page="123">123</button>
+      </div>
+      <div id="osk" class="osk"></div>
+      <div class="name-btns">
+        <button id="btn-name-skip" class="ghost-btn">건너뛰기</button>
+        <button id="btn-name-ok" class="big-btn">등록하기 ✔</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ 랭킹(명예의 전당) 화면 ══════════ -->
+  <section id="screen-ranking" class="screen">
+    <div class="ranking-center">
+      <h2 class="ranking-title">🏆 명예의 전당 TOP 10</h2>
+      <ol id="ranking-list" class="ranking-list"></ol>
+      <div class="name-btns">
+        <button id="btn-rank-restart" class="big-btn">다시 도전하기 🔄</button>
+        <button id="btn-rank-home" class="ghost-btn">처음으로 🏠</button>
+      </div>
     </div>
   </section>
 
 </div>
 
 <script src="js/problems.js"></script>
+<script src="js/hangul.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/confetti.js"></script>
 <script src="js/app.js"></script>
