@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>수평을 맞춰라! 균형 저울 게임 — 경남수학문화관</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="stage">
+
+  <!-- ══════════ 시작 화면 ══════════ -->
+  <section id="screen-start" class="screen active">
+    <div class="float-weights" aria-hidden="true"></div>
+    <header class="start-logo">
+      <img id="logo-img-start" class="logo-img" src="assets/logo.png" alt="" onerror="this.classList.add('missing')">
+      <div class="logo-text">
+        <span class="logo-gnmc">GNMC</span>
+        <span class="logo-name">경상남도교육청 경남수학문화관</span>
+      </div>
+    </header>
+
+    <div class="start-center">
+      <h1 class="game-title"><span class="title-emoji">⚖️</span> 수평을 맞춰라!</h1>
+      <p class="game-subtitle">저울과 등식의 비밀, 지렛대 수학 놀이</p>
+
+      <div class="howto">
+        <div class="howto-card">
+          <div class="howto-icon">🧐</div>
+          <div class="howto-step">1단계</div>
+          <p>위쪽 수식의 <b>□</b>에<br>들어갈 수를 생각해요</p>
+        </div>
+        <div class="howto-card">
+          <div class="howto-icon">👆</div>
+          <div class="howto-step">2단계</div>
+          <p>무게추를 <b>드래그</b>해서<br><b>?</b> 칸에 올려요</p>
+        </div>
+        <div class="howto-card">
+          <div class="howto-icon">🎉</div>
+          <div class="howto-step">3단계</div>
+          <p>저울이 <b>수평</b>이 되면<br>점수를 얻어요!</p>
+        </div>
+      </div>
+
+      <div class="howto-tip">💡 무게추가 <b>가운데에서 멀수록</b> 더 무겁게 작용해요! (무게 × 거리)</div>
+
+      <button id="btn-start" class="big-btn">게임 시작 ▶</button>
+      <p class="start-meta">총 10문제 · 문제당 30초 · 풀수록 어려워져요!</p>
+    </div>
+  </section>
+
+  <!-- ══════════ 게임 화면 ══════════ -->
+  <section id="screen-game" class="screen">
+    <header class="game-header">
+      <div class="header-left">
+        <img id="logo-img-game" class="logo-img small" src="assets/logo.png" alt="" onerror="this.classList.add('missing')">
+        <span class="header-logo-text">경남수학문화관</span>
+      </div>
+      <div class="header-center">
+        <span id="q-progress" class="q-progress">문제 1 / 10</span>
+        <div id="star-row" class="star-row"></div>
+      </div>
+      <div class="header-right">
+        <div class="score-box">⭐ <span id="score">0</span>점</div>
+        <button id="btn-mute" class="icon-btn" aria-label="소리 켜기/끄기">🔊</button>
+        <button id="btn-quit" class="icon-btn" aria-label="처음으로">🏠</button>
+      </div>
+    </header>
+
+    <div class="timer-track"><div id="timer-bar" class="timer-bar"></div></div>
+
+    <div class="equation-panel">
+      <div id="equation" class="equation"></div>
+    </div>
+
+    <div id="scale-area" class="scale-area">
+      <div class="beam-assembly">
+        <div id="beam" class="beam"></div>
+        <div class="pivot-cap"></div>
+      </div>
+      <div class="pillar"></div>
+      <div class="pedestal"></div>
+    </div>
+
+    <div id="message" class="message">무게추를 끌어서 반짝이는 <b>?</b> 칸에 올려 보세요!</div>
+
+    <div class="tray-wrap">
+      <div class="tray-label">무게추 보관함</div>
+      <div id="tray" class="tray"></div>
+    </div>
+
+    <div id="feedback-overlay" class="feedback-overlay hidden">
+      <div id="feedback-card" class="feedback-card"></div>
+    </div>
+  </section>
+
+  <!-- ══════════ 결과 화면 ══════════ -->
+  <section id="screen-result" class="screen">
+    <canvas id="confetti-canvas"></canvas>
+    <video id="celebration-video" src="assets/celebration.mp4" playsinline></video>
+    <div class="result-center">
+      <div id="result-rank" class="result-rank">🏆 수학 천재!</div>
+      <h2 class="result-title">축하합니다!</h2>
+      <div id="result-stars" class="result-stars"></div>
+      <div class="result-score-box">
+        <div class="result-score-label">최종 점수</div>
+        <div id="result-score" class="result-score">0</div>
+        <div id="result-detail" class="result-detail">10문제 중 10문제 정답</div>
+      </div>
+      <button id="btn-restart" class="big-btn">다시 도전하기 🔄</button>
+      <p class="result-logo-line">경상남도교육청 경남수학문화관 · GNMC</p>
+    </div>
+  </section>
+
+</div>
+
+<script src="js/problems.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/confetti.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
