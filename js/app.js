@@ -266,10 +266,14 @@
     equationEl.innerHTML = '';
     state.blankChips = [];
 
+    function stagger(el) {
+      el.style.animationDelay = (equationEl.children.length * 0.05) + 's';
+    }
     function addChip(html, cls) {
       var s = document.createElement('span');
       s.className = 'chip ' + (cls || '');
       s.innerHTML = html;
+      stagger(s);
       equationEl.appendChild(s);
       return s;
     }
@@ -277,6 +281,7 @@
       var s = document.createElement('span');
       s.className = 'op';
       s.textContent = txt;
+      stagger(s);
       equationEl.appendChild(s);
     }
 
@@ -314,8 +319,9 @@
   /* ══════════ 보관함 렌더링 ══════════ */
   function renderTray(p) {
     trayEl.innerHTML = '';
-    ProblemPool.trayNumbers(p.answer).forEach(function (n) {
+    ProblemPool.trayNumbers(p.answer).forEach(function (n, i) {
       var w = makeWeight(n, 'tray-weight');
+      w.style.animationDelay = (i * 0.06) + 's';   // 통통 튀며 순차 등장
       w.addEventListener('pointerdown', onWeightPointerDown);
       trayEl.appendChild(w);
     });
@@ -442,10 +448,33 @@
     });
   }
 
+  /* 정답 순간 목표 칸 자리에서 터지는 미니 팡파레 */
+  function miniBurst() {
+    var emo = ['✨', '⭐', '🎉', '💫'];
+    state.targets.forEach(function (t) {
+      var r = t.el.getBoundingClientRect();
+      var c = clientToStage(r.left + r.width / 2, r.top + r.height / 2);
+      for (var i = 0; i < 10; i++) {
+        var s = document.createElement('span');
+        s.className = 'burst-p';
+        s.textContent = emo[i % emo.length];
+        var ang = Math.random() * Math.PI * 2;
+        var dist = 80 + Math.random() * 90;
+        s.style.setProperty('--dx', Math.cos(ang) * dist + 'px');
+        s.style.setProperty('--dy', (Math.sin(ang) * dist - 40) + 'px');
+        s.style.left = c.x + 'px';
+        s.style.top = c.y + 'px';
+        stage.appendChild(s);
+        setTimeout(function (el) { return function () { el.remove(); }; }(s), 900);
+      }
+    });
+  }
+
   function succeed() {
     state.solved = true;
     state.locked = true;
     stopTimer();
+    miniBurst();
     state.targets.forEach(function (t) { t.el.classList.add('done'); });
     placeWeightOnTarget(state.problem.answer);
     setTilt(0, true);
@@ -462,6 +491,11 @@
     animateScore(state.score, state.score + points);
     state.score += points;
     renderStars();
+
+    // 점수 상자 통통 효과
+    var scoreBox = document.querySelector('.score-box');
+    scoreBox.classList.add('bump');
+    setTimeout(function () { scoreBox.classList.remove('bump'); }, 550);
 
     messageEl.innerHTML = '⚖️ 수평이 되었어요! <b>무게×거리</b>가 양쪽 모두 같아요.';
     showFeedback('🎉 정답이에요!', '+' + points + '점 (' + tier + '단계 × ' + timeLeft + '초)', 'good');

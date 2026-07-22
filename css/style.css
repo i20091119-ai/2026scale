@@ -236,6 +236,33 @@ img { -webkit-user-drag: none; user-select: none; }
 }
 .start-sub-btns { display: flex; gap: 22px; }
 
+/* ── 시작 화면 생동감 효과 ── */
+#btn-start { animation: btn-pulse 2.2s ease-in-out infinite; }
+@keyframes btn-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.045); }
+}
+.howto-card { animation: card-bob 4s ease-in-out infinite; }
+.howto-card:nth-child(2) { animation-delay: .55s; }
+.howto-card:nth-child(3) { animation-delay: 1.1s; }
+@keyframes card-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-9px); }
+}
+.butterfly {
+  position: absolute;
+  z-index: 4;
+  bottom: 150px; left: -70px;
+  font-size: 46px;
+  pointer-events: none;
+  animation: fly-x 26s linear infinite, fly-y 3.2s ease-in-out infinite;
+}
+@keyframes fly-x { 0% { left: -70px; } 100% { left: 103%; } }
+@keyframes fly-y {
+  0%, 100% { transform: translateY(0) rotate(8deg); }
+  50%      { transform: translateY(-52px) rotate(-8deg); }
+}
+
 /* ═══════════ 게임 화면 ═══════════ */
 #screen-game {
   background: linear-gradient(180deg, #d8f1ff 0%, #f2fbff 40%, #fff8e8 100%);
@@ -536,8 +563,33 @@ img { -webkit-user-drag: none; user-select: none; }
 .weight.tray-weight .w-num { font-size: 34px; padding: 1px 12px; }
 .weight.drag-src { opacity: .3; }
 
+/* ── 게임 화면 등장·연출 효과 ── */
+@keyframes pop-in {
+  0%   { transform: scale(.3) translateY(22px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+.tray .weight { animation: pop-in .45s cubic-bezier(.34, 1.56, .64, 1) backwards; }
+.equation .chip:not(.blank),
+.equation .op { animation: pop-in .4s cubic-bezier(.34, 1.56, .64, 1) backwards; }
+
+.score-box.bump { animation: score-bump .5s; }
+@keyframes score-bump { 30% { transform: scale(1.16); } }
+
+.burst-p {
+  position: absolute;
+  z-index: 65;
+  font-size: 30px;
+  pointer-events: none;
+  animation: burst-fly .85s ease-out forwards;
+}
+@keyframes burst-fly {
+  0%   { transform: translate(0, 0) scale(.6); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(1.15); opacity: 0; }
+}
+
 /* 드래그 중 유령 추 */
 .weight.drag-ghost {
+  animation: none;
   position: absolute;
   z-index: 60;
   width: 130px; height: 152px;
@@ -607,6 +659,7 @@ img { -webkit-user-drag: none; user-select: none; }
   border: 3px solid rgba(255,224,138,.6);
   border-radius: 999px;
   padding: 12px 54px;
+  animation: title-float 3s ease-in-out infinite;
 }
 .result-title {
   font-size: 100px; font-weight: 900; color: #fff;
@@ -645,7 +698,10 @@ img { -webkit-user-drag: none; user-select: none; }
   align-items: center; justify-content: center;
   gap: 26px;
 }
-.name-title { font-size: 62px; font-weight: 900; color: #2d4a66; }
+.name-title {
+  font-size: 62px; font-weight: 900; color: #2d4a66;
+  animation: title-float 3.4s ease-in-out infinite;
+}
 .name-score {
   font-size: 34px; font-weight: 800; color: #7a5b1e;
   background: #fff3c9;
@@ -736,6 +792,16 @@ img { -webkit-user-drag: none; user-select: none; }
   animation: blank-pulse 1.3s ease-in-out 3;
 }
 .rank-no { font-size: 36px; width: 96px; color: #2d4a66; }
+/* 1~3위 메달 흔들흔들 */
+.rank-row:nth-child(-n+3) .rank-no {
+  display: inline-block;
+  transform-origin: 50% 0;
+  animation: medal-swing 2.4s ease-in-out infinite;
+}
+@keyframes medal-swing {
+  0%, 100% { transform: rotate(-7deg); }
+  50%      { transform: rotate(7deg); }
+}
 .rank-name { font-size: 38px; flex: 1; color: #33415c; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rank-date { font-size: 26px; color: #8a97ad; }
 .rank-score { font-size: 38px; color: #e08600; width: 170px; text-align: right; }
