@@ -11,9 +11,9 @@
   var WEIGHT_ON_BEAM = 116;                          // 저울 위 추 크기(px)
   var MAX_ANGLE = 11;                                // 최대 기울기(도)
   var TOTAL_QUESTIONS = 10;
-  var TIME_LIMIT = 30;                               // 문제당 초
+  var TIME_BASE = 100, TIME_STEP = 5;                // 1단계 100초, 단계마다 5초씩 감소
   var IDLE_LIMIT_MS = 90000;                         // 방치 → 시작화면
-  var SCAFFOLD_MAX_TIER = 2;                         // 이 단계까지 유아용 도움 표시
+  var SCAFFOLD_MAX_TIER = 4;                         // 이 단계까지 도움 표시 (무게×거리 익히기)
 
   /* ── DOM ──────────────────────────────────────────────────── */
   var $ = function (id) { return document.getElementById(id); };
@@ -52,6 +52,7 @@
     solved: false,
     timerEnd: 0,
     timerRaf: 0,
+    timeLimit: TIME_BASE,
     pausedRemaining: null,
     lastTickSec: -1,
     blankChips: [],    // 등식의 빈칸 칩 [{el, d}]
@@ -220,7 +221,11 @@
       if (hasBlank) parts.push(p.x ? 'x' : '?');
       var text = parts.join(' + ') || '0';
       // 빈칸이 없는 팔은 합계까지 보여줘 목표 값을 알 수 있게 한다
-      if (!hasBlank && parts.length > 1) text += ' = ' + ProblemPool.torque(p[side]);
+      // (곱셈 항이 있으면 한 항이어도 계산 결과를 보여준다: 3×2 = 6)
+      var hasProduct = p[side].some(function (t) { return t.d > 1; });
+      if (!hasBlank && (parts.length > 1 || hasProduct)) {
+        text += ' = ' + ProblemPool.torque(p[side]);
+      }
       el.innerHTML = (side === 'left' ? '👈 왼쪽 ' : '👉 오른쪽 ') + '<b>' + text + '</b>';
     });
   }
@@ -551,8 +556,8 @@
     state.results.push(false);
     renderStars();
     messageEl.innerHTML = '⏰ 시간 초과! 정답은 <b>' + state.problem.answer + '</b>이었어요.';
-    showFeedback('⏰ 시간 초과!', '정답은 ' + state.problem.answer, 'bad');
-    setTimeout(nextQuestion, 2400);
+    showFeedback('⏰ 시간 초과!', '정답은 ' + state.problem.answer + ' · 게임이 끝났어요', 'bad');
+    setTimeout(endGame, 2600);   // 시간 초과 = 게임 종료
   }
 
   /* ══════════ 피드백 오버레이 ══════════ */
@@ -584,8 +589,13 @@
   }
 
   /* ══════════ 타이머 ══════════ */
+  function timeLimitFor(tier) {
+    return TIME_BASE - (tier - 1) * TIME_STEP;   // 1단계 100초 → 10단계 55초
+  }
+
   function startTimer() {
-    state.timerEnd = performance.now() + TIME_LIMIT * 1000;
+    state.timeLimit = timeLimitFor(state.problem.tier);
+    state.timerEnd = performance.now() + state.timeLimit * 1000;
     state.lastTickSec = -1;
     state.pausedRemaining = null;
     timerBar.classList.remove('warn', 'danger');
@@ -597,7 +607,7 @@
     (function tick(now) {
       if (state.screen !== 'game' || state.solved) return;
       var left = Math.max(0, state.timerEnd - now);
-      var ratio = left / (TIME_LIMIT * 1000);
+      var ratio = left / (state.timeLimit * 1000);
       timerBar.style.width = (ratio * 100) + '%';
       timerBar.classList.toggle('warn', ratio < 0.4 && ratio >= 0.17);
       timerBar.classList.toggle('danger', ratio < 0.17);
@@ -633,9 +643,23 @@
     state.score = 0;
     state.correctCount = 0;
     state.results = [];
+    state.locked = true;
+    state.solved = false;
     scoreEl.textContent = '0';
     showScreen('game');
-    loadQuestion();
+    // 준비 화면: 큰 시작 버튼을 눌러야 첫 문제와 타이머가 시작된다
+    equationEl.innerHTML = '';
+    beamEl.innerHTML = '';
+    trayEl.innerHTML = '';
+    state.targets = [];
+    $('sum-left').classList.add('hidden');
+    $('sum-right').classList.add('hidden');
+    qProgressEl.textContent = '문제 1 / ' + TOTAL_QUESTIONS;
+    $('q-grade').textContent = '';
+    renderStars();
+    timerBar.style.width = '100%';
+    messageEl.innerHTML = '준비되면 <b>시작</b> 버튼을 눌러 주세요!';
+    $('ready-overlay').classList.remove('hidden');
   }
 
   function loadQuestion() {
@@ -685,11 +709,11 @@
     $('result-detail').textContent =
       TOTAL_QUESTIONS + '문제 중 ' + state.correctCount + '문제 정답';
 
-    // 최대 점수 = (1+2+…+10) × 30초 = 1650점
+    // 최대 점수 = Σ 단계×제한시간 = 3850점
     var rank;
-    if (state.score >= 1250) rank = '🏆 수학 천재!';
-    else if (state.score >= 850) rank = '🎓 수학 박사!';
-    else if (state.score >= 450) rank = '🌟 수학 우등생!';
+    if (state.score >= 2900) rank = '🏆 수학 천재!';
+    else if (state.score >= 1950) rank = '🎓 수학 박사!';
+    else if (state.score >= 1050) rank = '🌟 수학 우등생!';
     else if (state.score > 0) rank = '💪 멋진 도전자!';
     else rank = '🍀 다음엔 잘할 수 있어요!';
     $('result-rank').textContent = rank;
@@ -718,6 +742,7 @@
   function goHome() {
     stopTimer();
     $('howto-modal').classList.add('hidden');
+    $('ready-overlay').classList.add('hidden');
     Confetti.stop();
     var video = $('celebration-video');
     video.pause();
@@ -875,6 +900,12 @@
 
   /* ══════════ 버튼 ══════════ */
   $('btn-start').addEventListener('click', function () { SFX.unlock(); SFX.click(); startGame(); });
+  $('btn-ready').addEventListener('click', function () {
+    SFX.unlock();
+    SFX.click();
+    $('ready-overlay').classList.add('hidden');
+    loadQuestion();
+  });
   $('btn-restart').addEventListener('click', function () { SFX.click(); Confetti.stop(); startGame(); });
   $('btn-quit').addEventListener('click', function () { SFX.click(); goHome(); });
   $('btn-mute').addEventListener('click', function () {

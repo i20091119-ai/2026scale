@@ -821,6 +821,29 @@ img { -webkit-user-drag: none; user-select: none; }
   padding: 40px 0;
 }
 
+/* ═══════════ 시작 전 준비 화면 ═══════════ */
+.ready-overlay {
+  position: absolute; inset: 0;
+  z-index: 75;
+  background: rgba(203, 233, 252, .96);
+  display: flex; align-items: center; justify-content: center;
+}
+.ready-overlay.hidden { display: none; }
+.ready-card {
+  background: #fff;
+  border-radius: 44px;
+  padding: 50px 100px;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(30, 50, 80, .25);
+  display: flex; flex-direction: column;
+  align-items: center; gap: 22px;
+}
+.ready-emoji { font-size: 90px; animation: tilt 2.6s ease-in-out infinite; }
+.ready-title { font-size: 64px; font-weight: 900; color: #2d4a66; }
+.ready-desc { font-size: 32px; font-weight: 600; color: #44506a; line-height: 1.5; }
+.ready-desc b { color: #e08600; }
+#btn-ready { animation: btn-pulse 2.2s ease-in-out infinite; margin-top: 8px; }
+
 /* ═══════════ 게임 방법 팝업 ═══════════ */
 .modal {
   position: absolute; inset: 0;
