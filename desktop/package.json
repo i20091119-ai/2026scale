@@ -1,0 +1,44 @@
+{
+  "name": "balance-scale-kiosk",
+  "version": "1.0.0",
+  "description": "수평을 맞춰라! — 경남수학문화관 전자칠판용 키오스크 (자동 업데이트)",
+  "main": "main.js",
+  "author": "경남수학문화관",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "collect": "node collect-content.js",
+    "dist": "npm run collect && electron-builder --win --x64"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "kr.gnmc.balancescale",
+    "productName": "수평을 맞춰라",
+    "copyright": "경상남도교육청 경남수학문화관",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.js", "updater.js", "splash.html", "channel.json", "package.json"],
+    "extraResources": [{ "from": "content", "to": "content" }],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.png",
+      "artifactName": "BalanceScale-Setup-${version}.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "수평을 맞춰라",
+      "runAfterFinish": true
+    },
+    "publish": { "provider": "github", "owner": "i20091119-ai", "repo": "2026scale", "releaseType": "release" }
+  }
+}

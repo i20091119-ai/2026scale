@@ -1,0 +1,46 @@
+name: Build Windows installer
+
+# 태그(v1.0.0 등)를 푸시하면 Windows 설치파일을 빌드해 GitHub Release 에 올린다.
+# Actions 탭에서 "Run workflow" 로 수동 실행하면 설치파일을 아티팩트로만 남긴다.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Collect game content
+        run: npm run collect
+
+      - name: Build and publish (tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        run: npx electron-builder --win --x64 --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build only (manual run)
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        run: npx electron-builder --win --x64 --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BalanceScale-Setup
+          path: desktop/dist/*.exe
+          if-no-files-found: error
