@@ -211,6 +211,8 @@ app.whenReady().then(function () {
   globalShortcut.register('Control+Alt+Q', function () { app.quit(); });
   globalShortcut.register('Control+Alt+U', async function () {
     if (win) { win.close(); win = null; }
+    // 창이 닫히며 파일 핸들이 풀릴 시간을 준다 (Windows 는 열린 파일이 있으면 폴더 교체 실패)
+    await new Promise(function (r) { setTimeout(r, 800); });
     await boot();
   });
 
