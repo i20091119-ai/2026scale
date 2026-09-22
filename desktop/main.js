@@ -8,6 +8,7 @@
  *     (인터넷이 없거나 실패하면 그냥 넘어감 — 기존 콘텐츠로 실행)
  *  4. 전체화면 키오스크 창에서 app://game/index.html 로드
  *
+ * 종료: 화면 오른쪽 위 모서리를 5번 연속 터치, 또는 Ctrl+Alt+Q
  * 단축키: Ctrl+Alt+Q 종료 / Ctrl+Alt+U 지금 업데이트 확인 후 재시작
  * ═══════════════════════════════════════════════════════════════ */
 'use strict';
@@ -168,6 +169,11 @@ function ensureContent() {
 function registerProtocol() {
   protocol.handle('app', function (request) {
     const u = new URL(request.url);
+    if (u.pathname === '/__quit') {                    // 게임 화면의 비밀 종료(모서리 5번 터치)
+      log('게임에서 종료 요청');
+      setTimeout(function () { app.quit(); }, 50);
+      return new Response('bye', { status: 200 });
+    }
     const file = U.safeResolve(contentDir, u.pathname);
     if (!file || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
       return new Response('Not found', { status: 404 });

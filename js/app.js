@@ -1031,6 +1031,31 @@
   });
   $('btn-mute').textContent = SFX.isMuted() ? '🔇' : '🔊';
 
+  /* ══════════ 관리자 비밀 종료: 오른쪽 위 모서리 5번 연속 터치 ══════════
+   * 설치판(키오스크)에서 창 닫기 버튼이 없으므로, 화면 오른쪽 위 빈 영역
+   * (160×160, 버튼 제외)을 2.5초 안에 5번 두드리면 앱을 종료한다.
+   * 브라우저에서 열었을 때는 아무 일도 하지 않는다. */
+  var QUIT_ZONE = 160, QUIT_TAPS = 5, QUIT_WINDOW_MS = 2500;
+  var quitTaps = [];
+
+  function requestKioskQuit() {
+    state.quitRequested = true;
+    if (location.protocol !== 'app:') return;        // 설치판이 아니면 무시
+    window.close();                                    // Electron: 창 닫힘 → 앱 종료
+    setTimeout(function () { location.href = '__quit'; }, 300);   // 예비 경로
+  }
+
+  document.addEventListener('pointerdown', function (e) {
+    if (e.target.closest('button')) return;
+    var p = clientToStage(e.clientX, e.clientY);
+    var inZone = p.x >= stage.offsetWidth - QUIT_ZONE && p.y <= QUIT_ZONE;
+    if (!inZone) { quitTaps = []; return; }
+    var now = Date.now();
+    quitTaps = quitTaps.filter(function (t) { return now - t < QUIT_WINDOW_MS; });
+    quitTaps.push(now);
+    if (quitTaps.length >= QUIT_TAPS) { quitTaps = []; requestKioskQuit(); }
+  }, true);
+
   /* ══════════ 디자인 교체 슬롯 감지 ══════════
    * assets/ui/ 에 이미지가 있으면 body 클래스로 스킨을 켠다.
    * (규격: docs/디자인_가이드.md) */
