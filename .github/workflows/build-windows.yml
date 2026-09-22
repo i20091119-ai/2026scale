@@ -1,12 +1,15 @@
 name: Build Windows installer
 
 # 실행 방법
+#  - desktop/ 폴더(실행기)가 바뀐 커밋이 게임 브랜치에 푸시되면 자동 빌드 + Release
 #  - Actions 탭 → "Build Windows installer" → Run workflow (release: true 이면 Release 생성)
 #  - 또는 v1.0.0 같은 태그를 푸시
 # 버전 번호는 desktop/package.json 의 version 을 따른다.
 on:
   push:
     tags: ['v*']
+    branches: ['claude/math-museum-balance-scale-3klq4n', 'main']
+    paths: ['desktop/**', '.github/workflows/build-windows.yml']
   workflow_dispatch:
     inputs:
       release:
@@ -51,7 +54,7 @@ jobs:
           if-no-files-found: error
 
       - name: Publish release
-        if: startsWith(github.ref, 'refs/tags/') || inputs.release
+        if: github.event_name != 'workflow_dispatch' || inputs.release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.ver.outputs.version }}
