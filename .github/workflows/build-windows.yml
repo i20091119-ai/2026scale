@@ -1,11 +1,18 @@
 name: Build Windows installer
 
-# 태그(v1.0.0 등)를 푸시하면 Windows 설치파일을 빌드해 GitHub Release 에 올린다.
-# Actions 탭에서 "Run workflow" 로 수동 실행하면 설치파일을 아티팩트로만 남긴다.
+# 실행 방법
+#  - Actions 탭 → "Build Windows installer" → Run workflow (release: true 이면 Release 생성)
+#  - 또는 v1.0.0 같은 태그를 푸시
+# 버전 번호는 desktop/package.json 의 version 을 따른다.
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      release:
+        description: 'Release 생성 (설치파일을 Releases 페이지에 올림)'
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -29,18 +36,27 @@ jobs:
       - name: Collect game content
         run: npm run collect
 
-      - name: Build and publish (tag)
-        if: startsWith(github.ref, 'refs/tags/')
-        run: npx electron-builder --win --x64 --publish always
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build only (manual run)
-        if: "!startsWith(github.ref, 'refs/tags/')"
+      - name: Build installer
         run: npx electron-builder --win --x64 --publish never
+
+      - name: Read version
+        id: ver
+        shell: bash
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: BalanceScale-Setup
+          name: BalanceScale-Setup-${{ steps.ver.outputs.version }}
           path: desktop/dist/*.exe
           if-no-files-found: error
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/') || inputs.release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.ver.outputs.version }}
+          name: 수평을 맞춰라 v${{ steps.ver.outputs.version }}
+          body: |
+            윈도우 설치판. 설치 후 실행하면 자동으로 최신 게임 버전으로 갱신됩니다.
+            설치 안내: docs/윈도우_설치_가이드.md
+          files: desktop/dist/*.exe
