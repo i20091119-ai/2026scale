@@ -1,6 +1,6 @@
 {
   "name": "balance-scale-kiosk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "수평을 맞춰라! — 경남수학문화관 전자칠판용 키오스크 (자동 업데이트)",
   "main": "main.js",
   "author": "경남수학문화관",

@@ -46,10 +46,20 @@ function log(msg) {
   console.log(line.trim());
 }
 
-/* ── 설정 (userData/settings.json): { "autoStart": false } ── */
+/* ── 설정 (userData/settings.json): { "autoStart": true } ──
+ * 전시·교실용이므로 기본값은 "로그인 시 자동 실행". 파일이 없으면 기본값으로 만들어 둔다. */
+const DEFAULT_SETTINGS = { autoStart: true };
 function loadSettings() {
-  try { return Object.assign({ autoStart: false }, JSON.parse(fs.readFileSync(path.join(userData, 'settings.json'), 'utf8'))); }
-  catch (e) { return { autoStart: false }; }
+  const file = path.join(userData, 'settings.json');
+  try {
+    return Object.assign({}, DEFAULT_SETTINGS, JSON.parse(fs.readFileSync(file, 'utf8')));
+  } catch (e) {
+    try {
+      fs.mkdirSync(userData, { recursive: true });
+      fs.writeFileSync(file, JSON.stringify(DEFAULT_SETTINGS, null, 2));
+    } catch (e2) { /* 무시 */ }
+    return Object.assign({}, DEFAULT_SETTINGS);
+  }
 }
 
 /* ── 스플래시 ── */
@@ -174,6 +184,11 @@ function registerProtocol() {
       setTimeout(function () { app.quit(); }, 50);
       return new Response('bye', { status: 200 });
     }
+    if (u.pathname === '/__version') {                 // 게임 화면의 버전 표시용
+      const sha = U.readVersion(contentDir) || 'bundled';
+      return new Response('v' + app.getVersion() + ' · ' + sha.slice(0, 7),
+        { status: 200, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+    }
     const file = U.safeResolve(contentDir, u.pathname);
     if (!file || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
       return new Response('Not found', { status: 404 });
@@ -212,7 +227,10 @@ app.whenReady().then(function () {
   powerSaveBlocker.start('prevent-display-sleep');            // 전시 중 화면 꺼짐 방지
 
   const settings = loadSettings();
-  if (app.isPackaged) app.setLoginItemSettings({ openAtLogin: !!settings.autoStart });
+  if (app.isPackaged) {
+    app.setLoginItemSettings({ openAtLogin: !!settings.autoStart });
+    log('로그인 시 자동 실행: ' + (settings.autoStart ? '켬' : '끔'));
+  }
 
   globalShortcut.register('Control+Alt+Q', function () { app.quit(); });
   globalShortcut.register('Control+Alt+U', async function () {

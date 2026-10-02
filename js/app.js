@@ -1056,6 +1056,17 @@
     if (quitTaps.length >= QUIT_TAPS) { quitTaps = []; requestKioskQuit(); }
   }, true);
 
+  /* ══════════ 설치판 버전 표시 (시작 화면 구석) ══════════
+   * 어떤 버전이 돌고 있는지 바로 알 수 있도록. 브라우저에서는 표시하지 않는다. */
+  if (location.protocol === 'app:') {
+    fetch('__version').then(function (r) { return r.text(); }).then(function (t) {
+      var el = document.createElement('div');
+      el.className = 'build-stamp';
+      el.textContent = t;
+      $('screen-start').appendChild(el);
+    }).catch(function () {});
+  }
+
   /* ══════════ 디자인 교체 슬롯 감지 ══════════
    * assets/ui/ 에 이미지가 있으면 body 클래스로 스킨을 켠다.
    * (규격: docs/디자인_가이드.md) */
